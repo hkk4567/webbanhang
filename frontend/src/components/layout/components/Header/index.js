@@ -87,16 +87,16 @@ function Header() {
                                     <Link to="/">Trang chủ</Link>
                                 </li>
                                 <li className={cx('nav__item')}>
-                                    <Link to="/gioi-thieu">Giới thiệu</Link>
+                                    <Link to="/aboutus">Giới thiệu</Link>
                                 </li>
                                 <li className={cx('nav__item', 'hidden-menu-active')}>
-                                    <Link to="/Product">Sản phẩm</Link>
+                                    <Link to="/product">Sản phẩm</Link>
                                 </li>
                                 <li className={cx('nav__item')}>
-                                    <Link to="/tin-tuc">Tin tức</Link>
+                                    <Link to="/newspage">Tin tức</Link>
                                 </li>
                                 <li className={cx('nav__item')}>
-                                    <Link to="/lien-he">Liên hệ</Link>
+                                    <Link to="/contactpage">Liên hệ</Link>
                                 </li>
                             </ul>
                         </div>
@@ -115,7 +115,7 @@ function Header() {
                                             <FontAwesomeIcon icon={faMagnifyingGlass} />
                                             <input type="text" className={cx('search-input-text')} placeholder="Tìm kiếm..." />
                                         </div>
-                                        <a href="./multiSreach.php">Tìm kiếm nâng cao</a>
+                                        <Link to="/multiSearch">Tìm kiếm nâng cao</Link>
                                     </div>
                                 )}
                             </div>

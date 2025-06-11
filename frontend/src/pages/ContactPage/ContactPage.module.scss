@@ -1,0 +1,113 @@
+$primary-color: #c7a17a;
+$dark-color: #222;
+$text-color: #555;
+$light-bg: #f8f9fa;
+
+.wrapper {
+    padding: 40px 0;
+}
+
+// Style cho Breadcrumb và Page Title (tái sử dụng)
+.breadrumb {
+    display: flex;
+    align-items: center;
+    background-color: #f4f2ed;
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+.home a {
+    color: $primary-color;
+    font-weight: 500;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: $dark-color;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: #777;
+    margin-top: 0.5rem;
+}
+
+// Contact Info Section
+.contact-info {
+    background-color: $light-bg;
+    padding: 30px;
+    border-radius: 8px;
+    height: 100%;
+}
+
+.info-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $dark-color;
+    margin-bottom: 20px;
+    border-bottom: 2px solid $primary-color;
+    padding-bottom: 10px;
+}
+
+.info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        font-size: 1rem;
+        color: $text-color;
+        line-height: 1.6;
+    }
+}
+
+.info-icon {
+    font-size: 1.2rem;
+    color: $primary-color;
+    margin-right: 15px;
+    width: 20px; // Giữ icon thẳng hàng
+    text-align: center;
+}
+
+// Contact Form Section
+.contact-form {
+    label {
+        font-weight: 500;
+        color: $dark-color;
+    }
+
+    .form-control {
+        border-radius: 5px;
+
+        &:focus {
+            border-color: $primary-color;
+            box-shadow: 0 0 0 0.25rem rgba($primary-color, 0.25);
+        }
+    }
+}
+
+.submit-btn {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    padding: 12px 30px;
+    font-weight: bold;
+
+    &:hover {
+        background-color: darken($primary-color, 10%);
+        border-color: darken($primary-color, 10%);
+    }
+}
+
+// Google Map Section
+.map-section {
+    margin-top: 80px;
+    border-radius: 8px;
+    overflow: hidden; // Đảm bảo bo góc cho iframe
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}

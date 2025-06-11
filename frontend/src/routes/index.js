@@ -1,6 +1,10 @@
 import Home from '../pages/Home'
 import Product from '../pages/Product'
-import { HeaderOnly } from '../components/layout'
+import MultiSearch from '../pages/multiSreach'
+import CartProduct from '../pages/cartProduct'
+import AboutUsPage from '../pages/AboutUsPage'
+import NewsPage from '../pages/NewsPage'
+import ContactPage from '../pages/ContactPage'
 
 const publicRoutes = [
     {
@@ -10,7 +14,27 @@ const publicRoutes = [
     {
         path: '/product',
         component: Product,
-        layout: HeaderOnly
+    },
+    {
+        path: '/multiSearch',
+        component: MultiSearch,
+    },
+    {
+        path: '/cart',
+        component: CartProduct,
+    },
+    {
+        path: '/aboutus',
+        component: AboutUsPage,
+    },
+    {
+        path: '/newspage',
+        component: NewsPage,
+    }
+    ,
+    {
+        path: '/contactpage',
+        component: ContactPage,
     }
 ]
 const privateRoutes = []

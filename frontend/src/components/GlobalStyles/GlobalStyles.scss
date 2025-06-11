@@ -8,3 +8,12 @@ body {
     font-family: 'Roboto', sans-serif;
     text-rendering: optimizeSpeed;
 }
+ul,
+ol {
+    list-style: none;
+    /* Loại bỏ dấu chấm/số đầu dòng */
+    padding-left: 0;
+    /* Loại bỏ khoảng đệm bên trái mặc định */
+    margin-bottom: 0;
+    /* Bootstrap thường thêm margin-bottom, bạn có thể reset ở đây nếu muốn */
+}

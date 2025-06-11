@@ -1,0 +1,100 @@
+// Biến màu để dễ quản lý
+$primary-color: #c7a17a;
+$dark-color: #222;
+$text-color: #555;
+$light-bg: #f8f9fa; // Màu nền sáng của Bootstrap
+
+// Import breadcrumb style từ Main.module.scss nếu bạn muốn tái sử dụng
+// Hoặc định nghĩa lại ở đây
+.breadrumb {
+    display: flex;
+    align-items: center;
+    background-color: #f4f2ed;
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.home a {
+    color: $primary-color;
+    font-weight: 500;
+}
+
+/* --- Page Header --- */
+.page-header {
+    position: relative;
+    padding: 6rem 0;
+    background-image: url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    /* Hiệu ứng parallax */
+    color: white;
+    border-radius: 8px;
+    margin-top: 1rem;
+
+    /* Lớp phủ màu tối để chữ dễ đọc hơn */
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+    }
+
+    /* Đưa nội dung lên trên lớp phủ */
+    .container {
+        position: relative;
+        z-index: 2;
+    }
+}
+
+.page-title {
+    font-size: 3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.page-subtitle {
+    font-size: 1.25rem;
+    font-style: italic;
+}
+
+/* --- General Section Styling --- */
+.section-padding {
+    padding: 80px 0;
+}
+
+.section-title {
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    color: $dark-color;
+}
+
+.bg-light {
+    background-color: $light-bg;
+}
+
+/* --- Value Cards Styling --- */
+.value-card {
+    background-color: #fff;
+    padding: 40px 20px;
+    border-radius: 8px;
+    height: 100%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.value-icon {
+    font-size: 3rem;
+    color: $primary-color;
+    margin-bottom: 1.5rem;
+}

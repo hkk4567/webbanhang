@@ -82,10 +82,10 @@ function Footer() {
                             <h2 className={cx('mgb-20px')}>Chính sách</h2>
                             <ul className={cx('policy-list')}>
                                 <li><Link to="/">Trang chủ</Link></li>
-                                <li><Link to="/gioi-thieu">Giới thiệu</Link></li>
-                                <li><Link to="/san-pham">Sản phẩm</Link></li>
-                                <li><Link to="/tin-tuc">Tin tức</Link></li>
-                                <li><Link to="/lien-he">Liên hệ</Link></li>
+                                <li><Link to="/aboutus">Giới thiệu</Link></li>
+                                <li><Link to="/product">Sản phẩm</Link></li>
+                                <li><Link to="/newspage">Tin tức</Link></li>
+                                <li><Link to="/contactpage">Liên hệ</Link></li>
                             </ul>
                         </div>
                     </div>
