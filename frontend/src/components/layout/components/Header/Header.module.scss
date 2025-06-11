@@ -1,0 +1,441 @@
+/* =================================================================
+   Header.module.scss
+   - Tối ưu hóa từ CSS gốc, sử dụng nesting của SCSS.
+   - Loại bỏ các selector không cần thiết khi dùng với React State.
+   ================================================================= */
+
+/* --- Keyframes --- */
+// Đặt keyframes ở đầu hoặc trong một file partial riêng
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* --- Header chính --- */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    padding: 10px 0;
+    border-bottom: 1px solid #645e3a;
+    z-index: 2;
+    transition: all 0.3s ease;
+    background-color: #422b1d;
+
+    // State khi cuộn trang, được thêm vào bằng JavaScript
+    &--scroll {
+        background-color: rgba(0, 0, 0, 0.808);
+        height: 120px;
+    }
+}
+
+
+/* --- Menu Icon (Mobile/Tablet) --- */
+.menu-icon {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #e4b95b;
+    font-size: 24px;
+
+    .menu-active {
+        cursor: pointer;
+    }
+
+    .menu-icon-dropdown {
+        position: absolute;
+        width: 68vh;
+        top: 112%;
+        left: 0;
+        background-color: white;
+        padding: 10px 10px 0 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        animation: fadeIn .3s ease;
+        // display sẽ được quản lý bởi React
+    }
+
+    .menu-dropdown__list {
+        list-style: none;
+        padding-left: 0;
+
+        li {
+            padding: 4px 0;
+            border-bottom: 1px dotted #ccc;
+
+            a {
+                display: flex;
+                justify-content: space-between;
+                text-decoration: none;
+                padding: 10px 0;
+                color: black; // Màu mặc định
+
+                i {
+                    font-size: 16px;
+                }
+            }
+        }
+    }
+
+    .dropdown-item--active {
+        color: #e7b35a !important;
+    }
+}
+
+
+/* --- Logo --- */
+.logo {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    a {
+        text-decoration: none;
+        color: transparent;
+        display: block;
+        height: 100%;
+    }
+
+    .logo-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 40px;
+        border-radius: 50%;
+        background-color: #895d3a;
+    }
+
+    .logo-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -100%);
+        color: white;
+        font-size: 20px;
+    }
+
+    .logo-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, 0%);
+        font-size: 24px;
+        font-weight: 600;
+        color: #e7b35a;
+        text-align: center;
+    }
+}
+
+
+/* --- Navigation (Desktop) --- */
+.nav {
+    display: flex;
+    align-items: center;
+    height: 100%;
+
+    &__list {
+        display: flex;
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+    }
+
+    &__item {
+        margin-right: 6px;
+
+        a {
+            position: relative;
+            padding: 6px 20px;
+            text-decoration: none;
+            color: white;
+            display: inline-block;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        &:hover a {
+            color: #e4b95b;
+            transition: color 0.2s linear;
+        }
+
+        .product-icon {
+            position: absolute;
+            top: 30%;
+            margin-left: 4px;
+            font-size: 12px;
+        }
+    }
+}
+
+
+/* --- Right Box (Search, Cart, User) --- */
+.right-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    width: 100%;
+    font-size: 20px;
+    color: white;
+
+    // Hiệu ứng hover chung
+    .search:hover,
+    .cart>a:hover,
+    // target thẻ <a> bên trong cart
+    .user-icon>i:hover {
+        cursor: pointer;
+        color: #e4b95b;
+        transition: color 0.2s linear;
+    }
+
+    .search {
+        padding-right: 10px;
+        position: relative;
+
+        .search-input {
+            position: absolute;
+            top: 140%;
+            right: -26px;
+            background-color: white;
+            width: 280px;
+            align-items: center;
+            box-shadow: 0px 3px 3px black;
+            animation: fadeIn .2s ease;
+            // display được quản lý bởi React
+
+            a {
+                border-top: 1px solid black;
+                padding: 5px 10px 10px 10px;
+                display: block;
+                text-align: center;
+                text-decoration: none;
+                color: #333;
+            }
+
+            .input-icon-js {
+                color: black;
+                display: inline-block;
+                font-size: 16px;
+                padding: 0 10px;
+                color: #888;
+                cursor: pointer;
+            }
+
+            .search-input-text {
+                display: inline-block;
+                border: none;
+                outline: none;
+                font-size: 18px;
+                padding: 10px 14px 10px 0;
+                flex: 1;
+                color: #888;
+            }
+        }
+    }
+
+    .cart {
+        position: relative;
+        padding: 0 18px;
+
+        &::before,
+        &::after {
+            position: absolute;
+            top: 50%;
+            content: "|";
+            font-size: 16px;
+            transform: translateY(-50%); // Căn giữa tốt hơn
+        }
+
+        &::before {
+            left: 0;
+        }
+
+        &::after {
+            right: 0;
+        }
+
+        .cart-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: -8px;
+            right: 10px;
+            font-size: 14px;
+            background-color: #e4b95b;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.301);
+        }
+
+        // Dropdown của cart vẫn dùng :hover
+        &:hover .dropdown-cart {
+            display: block;
+        }
+
+        .dropdown-cart {
+            display: none; // Mặc định ẩn
+            position: absolute;
+            top: 150%;
+            right: -4px;
+            color: black;
+            background-color: white;
+            box-shadow: 0 1px 1px black;
+            width: 300px;
+            padding: 4px 0;
+            border-radius: 4px;
+            animation: fadeIn .2s ease;
+
+            &::before {
+                position: absolute;
+                content: "";
+                top: -18px;
+                left: 0px;
+                width: 100%;
+                height: 18px;
+            }
+
+            // State khi giỏ hàng rỗng
+            &.dropdown-cart-list--noItem {
+
+                .dropdown-cart-footer,
+                .dropdown-cart-list {
+                    display: none;
+                }
+
+                .dropdown-cart-content {
+                    display: block;
+                }
+            }
+
+            .dropdown-cart-content {
+                padding: 18px 20px;
+                text-align: center;
+                display: none;
+            }
+
+            .dropdown-cart-list {
+                max-height: 260px;
+                padding: 0 15px;
+                overflow-y: auto;
+                list-style: none;
+
+                &::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                &::-webkit-scrollbar-track {
+                    background-color: #cccccc63;
+                    border-radius: 4px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background: #e4b95b;
+                    border-radius: 4px;
+                }
+            }
+
+            // Các style cho item và footer trong cart
+            // ... (Copy/paste các style của .dropdown-cart-item, .dropdown-cart-footer từ file gốc vào đây)
+        }
+    }
+
+    .user-icon {
+        position: relative;
+        padding-left: 10px;
+        margin-right: 20px;
+
+        // Menu cho user chưa đăng nhập
+        .dropdown-user {
+            position: absolute;
+            top: 160%;
+            right: -4px;
+            background-color: white;
+            box-shadow: 0 1px 1px black;
+            width: 128px;
+            padding: 4px 0;
+            border-radius: 4px;
+            list-style: none;
+            animation: fadeIn .2s ease;
+            // display quản lý bởi React
+
+            li {
+                padding: 6px 8px;
+                cursor: pointer;
+
+                a {
+                    display: block;
+                    color: black;
+                    text-decoration: none;
+                    font-size: 18px;
+
+                    &:hover {
+                        color: #e4b95b;
+                        transition: color 0.2s linear;
+                    }
+                }
+            }
+        }
+
+        // Info cho user đã đăng nhập
+        .dropdown-user-info {
+            position: absolute;
+            background-color: white;
+            color: black;
+            font-size: 18px;
+            min-width: 200px; // Thêm min-width cho đẹp hơn
+            top: 140%;
+            right: -10px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            z-index: 999;
+            animation: fadeIn .2s ease;
+            // display quản lý bởi React
+
+            div {
+                padding: 4px 0;
+            }
+
+            .dropdown-user-info-name {
+                margin-bottom: 8px;
+            }
+
+            .dropdown-user-info-history {
+                margin: 10px 0;
+
+                a {
+                    color: #333;
+                    text-decoration: none;
+
+                    &:hover {
+                        color: #e4b95b;
+                    }
+                }
+            }
+
+            .dropdown-user-info-logout {
+                margin-top: 4px;
+                cursor: pointer;
+
+                &:hover {
+                    color: red;
+                }
+            }
+        }
+    }
+}

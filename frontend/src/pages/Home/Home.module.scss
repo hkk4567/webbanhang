@@ -1,0 +1,309 @@
+/* Home.module.scss */
+// Dựa trên file CSS gốc được cung cấp
+
+// --- Keyframes cho animation ---
+@keyframes rightIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes leftIn {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+
+/* ========= SLIDER SECTION ========= */
+.slider {
+    position: relative;
+    // Thêm chiều cao để slider không bị sụp layout khi các ảnh đang ẩn
+    // Chiều cao này nên tương ứng với tỉ lệ của ảnh, ví dụ:
+    padding-top: 40%; // Ví dụ cho ảnh có tỉ lệ 10:4
+    margin-top: 100px;
+    .slider-banner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none; // Ẩn theo mặc định
+
+        &.slider--active {
+            display: block; // Hiện khi có class active
+        }
+
+        a,
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    .slider-dot {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        bottom: 20px;
+        width: 100%;
+        height: 40px;
+
+        .slider-dot-item {
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            &.dot--active {
+                background-color: #e4b95b;
+            }
+        }
+    }
+}
+
+
+/* ========= MODULE BANNER SECTION ========= */
+.module-banner {
+    padding: 0 14px;
+    margin: 38px 0;
+
+    .module_banner1,
+    .module-banner2-1,
+    .module-banner2-2 {
+        position: relative;
+        text-decoration: none;
+        color: transparent;
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+
+        &:hover {
+
+            .module_banner1-img,
+            .module-banner2-1-img,
+            .module-banner2-2-img {
+                transform: scale(1.1);
+            }
+        }
+    }
+
+    .module_banner1-img,
+    .module-banner2-1-img,
+    .module-banner2-2-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(0.7);
+        transition: transform 0.4s ease-in-out;
+    }
+
+    .module-banner2-2 {
+        margin-top: 12px;
+    }
+
+    .text,
+    .text1,
+    .text2 {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        font-size: 28px;
+        font-weight: bold;
+        color: white;
+        padding: 20px;
+        width: 100%;
+    }
+}
+
+// Nút chung
+.btn-readmore {
+    display: inline-block; // Dùng inline-block để width có tác dụng
+    color: white;
+    border: 2px solid white;
+    border-radius: 40px;
+    width: 200px;
+    cursor: pointer;
+    padding: 10px 20px;
+    margin-top: 20px;
+    text-align: center;
+    font-size: 16px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    text-decoration: none; // Thêm cho thẻ Link
+
+    &:hover {
+        color: white;
+        background-color: #e4b95b;
+    }
+}
+
+
+/* ========= INTRODUCTION MENU SECTION ========= */
+.introduction-menu {
+    padding: 50px 15px;
+    min-height: 700px;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+
+    .introduction-menu-header {
+        text-align: center;
+        color: white;
+
+        h2 {
+            margin-bottom: 20px;
+            color: #e7b35a;
+            font-size: 46px;
+        }
+
+        p {
+            color: white;
+            font-size: 24px;
+            line-height: 1.5;
+            margin-bottom: 40px;
+        }
+    }
+
+    .product-box {
+        display: flex;
+        align-items: center;
+        margin-bottom: 40px;
+
+        img {
+            width: 100px;
+            height: 100px;
+            margin-right: 20px;
+        }
+
+        .product-box-content {
+            .product-box-content-introduction {
+                color: #e7b35a;
+                display: flex;
+                justify-content: space-between;
+                font-size: 22px;
+                font-weight: bold;
+
+                a {
+                    color: #e7b35a;
+                    text-decoration: none;
+                }
+            }
+
+            .product-box-description {
+                color: white;
+                font-size: 18px;
+                line-height: 1.4;
+                margin-top: 14px;
+                padding-top: 10px;
+                border-top: 4px dashed white;
+            }
+        }
+    }
+}
+
+
+/* ========= PRODUCT ADVERTISING SECTION ========= */
+.product-advertising {
+    padding: 80px 14px; // Thêm padding trên dưới
+    min-height: 700px;
+
+    .product-advertising-title {
+        margin-bottom: 20px;
+        color: #e7b35a;
+        font-size: 46px;
+
+        a {
+            color: #e4b95b;
+            transition: all 0.2s linear;
+            text-decoration: none;
+
+            &:hover {
+                color: black;
+            }
+        }
+    }
+
+    .product-advertising-title~p {
+        font-size: 22px;
+    }
+
+    .product-advertising-banner {
+        position: relative;
+        background-color: #7a5c3d;
+        padding: 45px 15px 120px 45px;
+        border-radius: 20px;
+
+        h2 {
+            color: white;
+            font-size: 50px;
+            line-height: 1.4;
+        }
+
+        p {
+            font-size: 20px;
+            color: white;
+            padding-right: 124px;
+            margin-bottom: 40px;
+            line-height: 1.4;
+        }
+
+        .product-advertising-banner-icon {
+            position: absolute;
+            bottom: 5%;
+            right: 5%;
+        }
+    }
+
+    .product-advertising-banner-img {
+        border-radius: 15px;
+        display: none;
+        transition: all 0.3s ease;
+
+        &.banner-img--active {
+            display: block;
+        }
+
+        .product-advertising-banner2 {
+            border-radius: 20px;
+            width: 100%;
+        }
+    }
+
+    .img-dots {
+        margin-top: 20px;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #ccc;
+            cursor: pointer;
+
+            &.dot--active {
+                background-color: #333;
+            }
+        }
+    }
+}
