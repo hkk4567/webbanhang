@@ -7,6 +7,7 @@ import NewsPage from '../pages/NewsPage'
 import ContactPage from '../pages/ContactPage'
 import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
+import SearchResultsPage from '../pages/SearchResultsPage'
 
 const publicRoutes = [
     {
@@ -44,6 +45,10 @@ const publicRoutes = [
     {
         path: '/register',
         component: RegisterPage,
+    },
+    {
+        path: '/search',
+        component: SearchResultsPage,
     }
 ]
 const privateRoutes = []

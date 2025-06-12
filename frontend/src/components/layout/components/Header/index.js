@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
-import { Link } from 'react-router-dom'; // Nên dùng Link cho SPA để không tải lại trang
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -16,32 +16,42 @@ const cx = classNames.bind(styles);
 
 function Header() {
     // === STATE MANAGEMENT ===
-    // State quản lý việc header có được scroll hay không
     const [isScrolled, setIsScrolled] = useState(false);
-
-    // State quản lý việc mở/đóng các menu
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [isSearchOpen, setSearchOpen] = useState(false);
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
 
-    // Dữ liệu giả lập, trong ứng dụng thực tế sẽ lấy từ state/context
+    // --- SỬA 2: THÊM STATE ĐỂ LƯU TỪ KHÓA TÌM KIẾM ---
+    const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate(); // Hook để điều hướng
+
+    // Dữ liệu giả lập
     const cartItemCount = 0;
-    const isLoggedIn = false; // Thay đổi thành true để xem giao diện đã đăng nhập
+    const isLoggedIn = false;
 
     // === EFFECTS ===
-    // Xử lý sự kiện scroll để thay đổi style của header
     useEffect(() => {
         const handleScroll = () => {
-            // Nếu vị trí cuộn > 50px, đặt isScrolled thành true
             setIsScrolled(window.scrollY > 50);
         };
-
         window.addEventListener('scroll', handleScroll);
-        // Dọn dẹp event listener khi component unmount để tránh rò rỉ bộ nhớ
         return () => {
             window.removeEventListener('scroll', handleScroll);
         };
-    }, []); // Mảng rỗng đảm bảo effect này chỉ chạy một lần khi component mount
+    }, []);
+
+    // --- SỬA 3: HÀM XỬ LÝ KHI SUBMIT FORM TÌM KIẾM ---
+    const handleSearchSubmit = (e) => {
+        e.preventDefault(); // Ngăn form tải lại trang
+        if (searchTerm.trim()) {
+            // Nếu có từ khóa, điều hướng đến trang search với query
+            navigate(`/search?q=${searchTerm}`);
+            // Đóng ô tìm kiếm sau khi submit
+            setSearchOpen(false);
+            // Xóa nội dung ô tìm kiếm
+            setSearchTerm('');
+        }
+    };
 
     return (
         <header className={cx('header', { 'header--scroll': isScrolled })}>
@@ -83,20 +93,40 @@ function Header() {
                     <div className="d-none d-lg-block col-lg-9">
                         <div className={cx('nav')}>
                             <ul className={cx('nav__list')}>
-                                <li className={cx('nav__item', 'nav__item--active')}>
-                                    <Link to="/">Trang chủ</Link>
+                                <li className={cx('nav__item')}>
+                                    <NavLink to="/"
+                                        className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        Trang chủ
+                                    </NavLink>
                                 </li>
                                 <li className={cx('nav__item')}>
-                                    <Link to="/aboutus">Giới thiệu</Link>
-                                </li>
-                                <li className={cx('nav__item', 'hidden-menu-active')}>
-                                    <Link to="/product">Sản phẩm</Link>
-                                </li>
-                                <li className={cx('nav__item')}>
-                                    <Link to="/newspage">Tin tức</Link>
+                                    <NavLink to="/aboutus"
+                                        className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        Giới thiệu
+                                    </NavLink>
                                 </li>
                                 <li className={cx('nav__item')}>
-                                    <Link to="/contactpage">Liên hệ</Link>
+                                    <NavLink to="/product"
+                                        className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        Sản phẩm
+                                    </NavLink>
+                                </li>
+                                <li className={cx('nav__item')}>
+                                    <NavLink to="/newspage"
+                                        className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        Tin tức
+                                    </NavLink>
+                                </li>
+                                <li className={cx('nav__item')}>
+                                    <NavLink to="/contactpage"
+                                        className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        Liên hệ
+                                    </NavLink>
                                 </li>
                             </ul>
                         </div>
@@ -110,13 +140,20 @@ function Header() {
                             <div className={cx('search')}>
                                 <FontAwesomeIcon icon={faMagnifyingGlass} onClick={() => setSearchOpen(!isSearchOpen)} />
                                 {isSearchOpen && (
-                                    <div className={cx('search-input')}>
+                                    <form className={cx('search-input')} onSubmit={handleSearchSubmit}>
                                         <div style={{ display: 'flex', alignItems: 'center' }}>
                                             <FontAwesomeIcon icon={faMagnifyingGlass} />
-                                            <input type="text" className={cx('search-input-text')} placeholder="Tìm kiếm..." />
+                                            <input
+                                                type="text"
+                                                className={cx('search-input-text')}
+                                                placeholder="Tìm kiếm..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                autoFocus // Tự động focus vào ô input khi nó xuất hiện
+                                            />
                                         </div>
                                         <Link to="/multiSearch">Tìm kiếm nâng cao</Link>
-                                    </div>
+                                    </form>
                                 )}
                             </div>
 

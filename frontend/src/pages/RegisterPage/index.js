@@ -141,9 +141,9 @@ function RegisterPage() {
         e.preventDefault();
         if (validateForm()) {
             // Lấy tên thay vì code để hiển thị
-            const provinceName = provinces.find(p => p.code === formData.province)?.name || '';
-            const districtName = districts.find(d => d.code === formData.district)?.name || '';
-            const wardName = wards.find(w => w.code === formData.ward)?.name || '';
+            const provinceName = provinces.find(p => p.code === Number(formData.province))?.name || '';
+            const districtName = districts.find(d => d.code === Number(formData.district))?.name || '';
+            const wardName = wards.find(w => w.code === Number(formData.ward))?.name || '';
 
             const finalData = {
                 ...formData,

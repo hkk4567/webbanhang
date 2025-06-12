@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom'; // Import Link để điều hướng
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss';
+import ProductCard from '../../components/ProductCard'; // Import component
+import { mockAllProducts } from '../../data/products'; // Import dữ liệu giả
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -155,7 +157,12 @@ function Product() {
 
                             {/* Danh sách sản phẩm (render sản phẩm vào đây) */}
                             <div className={cx('product-search-item', 'row')}>
-                                {/* Ví dụ: <div className="col-lg-4 col-md-6 col-12 mb-4"><ProductCard /></div> */}
+                                {mockAllProducts.map(product => (
+                                    // Bọc mỗi card trong một cột của Bootstrap
+                                    <div key={product.id} className="col-lg-4 col-md-6 mb-5">
+                                        <ProductCard product={product} />
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Phân trang */}

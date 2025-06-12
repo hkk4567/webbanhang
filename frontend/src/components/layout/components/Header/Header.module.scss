@@ -28,7 +28,7 @@
     height: 100px;
     padding: 10px 0;
     border-bottom: 1px solid #645e3a;
-    z-index: 2;
+    z-index: 99999;
     transition: all 0.3s ease;
     background-color: #422b1d;
 
@@ -38,8 +38,10 @@
         height: 120px;
     }
 }
-
-
+.active {
+    color: #f39c12;
+    font-weight: bold;
+}
 /* --- Menu Icon (Mobile/Tablet) --- */
 .menu-icon {
     position: relative;
@@ -178,6 +180,18 @@
             font-size: 12px;
         }
     }
+}
+
+.nav__link {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+/* Khi link đó có thêm class local “active” */
+.nav__link.active {
+    color: #e7b35a;
+    font-weight: bold; 
 }
 
 

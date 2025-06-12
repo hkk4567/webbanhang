@@ -1,0 +1,142 @@
+$primary-color: #e4b95b;
+$secondary-color: #e7b35a;
+
+// --- Định nghĩa hiệu ứng trượt vào ---
+@keyframes leftIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes rightIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+// --- Style cho Card ---
+.product-card-wrapper {
+    text-align: center;
+}
+
+.product-item-box {
+    margin-top: 40px;
+    position: relative;
+
+    .link-product {
+        display: block;
+    }
+
+    img {
+        width: 100%;
+        height: 280px; // Điều chỉnh chiều cao nếu cần
+        object-fit: cover;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        transition: transform 0.4s ease;
+    }
+
+    // Nút chức năng chung
+    &-cart,
+    &-view {
+        position: absolute;
+        bottom: 10px;
+        padding: 10px 14px;
+        color: white;
+        background-color: $secondary-color;
+        cursor: pointer;
+
+        // Mặc định ẩn đi
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease-in-out;
+    }
+
+    &-cart {
+        right: 10px;
+        border-top-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+    }
+
+    &-view {
+        left: 10px;
+        border-top-right-radius: 15px;
+        border-bottom-left-radius: 15px;
+    }
+
+    &-price {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 8px 20px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        color: $primary-color;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        z-index: 2;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    // --- Hiệu ứng khi Hover ---
+    &:hover {
+        img {
+            transform: scale(1.05); // Phóng to ảnh một chút
+        }
+
+        .product-item-box-price {
+            background-color: $primary-color;
+            color: white;
+        }
+
+        .product-item-box-cart,
+        .product-item-box-view {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .product-item-box-cart {
+            animation: rightIn 0.3s ease-in-out forwards;
+        }
+
+        .product-item-box-view {
+            animation: leftIn 0.3s ease-in-out forwards;
+        }
+    }
+}
+
+.product-item-box-content {
+    margin-top: 20px;
+
+    h3 {
+        font-size: 1rem;
+        text-transform: uppercase;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    a {
+        color: #333;
+        text-decoration: none;
+        transition: color 0.3s ease;
+
+        &:hover {
+            color: $primary-color;
+        }
+    }
+}
