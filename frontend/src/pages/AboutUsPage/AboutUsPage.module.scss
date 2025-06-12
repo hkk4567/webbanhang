@@ -3,7 +3,7 @@ $primary-color: #c7a17a;
 $dark-color: #222;
 $text-color: #555;
 $light-bg: #f8f9fa; // Màu nền sáng của Bootstrap
-
+@import '../Main.module.scss';
 // Import breadcrumb style từ Main.module.scss nếu bạn muốn tái sử dụng
 // Hoặc định nghĩa lại ở đây
 .breadrumb {

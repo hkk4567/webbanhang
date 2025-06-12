@@ -43,15 +43,17 @@ function NewsPage() {
         <main className={cx('wrapper')}>
             <div className="container">
                 {/* Breadcrumb */}
-                <div className="row">
-                    <div className="col-12">
-                        <ul className={cx('breadrumb')}>
-                            <li className={cx('home')}>
-                                <Link to="/">Trang chủ</Link>
-                                <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
-                            </li>
-                            <li className={cx('breadrumb-title-page')}>Tin tức</li>
-                        </ul>
+                <div className={cx('bread-crumb')}>
+                    <div className="row">
+                        <div className="col-12">
+                            <ul className={cx('breadrumb')}>
+                                <li className={cx('home')}>
+                                    <Link to="/" className={cx('product-home')}>Trang chủ</Link>
+                                    <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
+                                </li>
+                                <li className={cx('breadrumb-title-page')}>Tin tức</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 

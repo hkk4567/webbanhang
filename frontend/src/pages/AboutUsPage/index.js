@@ -13,16 +13,18 @@ function AboutUsPage() {
     return (
         <>
             {/* 1. Breadcrumb */}
-            <div className="container mt-4">
-                <div className="row">
-                    <div className="col-12">
-                        <ul className={cx('breadrumb')}>
-                            <li className={cx('home')}>
-                                <Link to="/">Trang chủ</Link>
-                                <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
-                            </li>
-                            <li className={cx('breadrumb-title-page')}>Giới thiệu</li>
-                        </ul>
+            <div className={cx('bread-crumb')}>
+                <div className="container mt-4">
+                    <div className="row">
+                        <div className="col-12">
+                            <ul className={cx('breadrumb')}>
+                                <li className={cx('home')}>
+                                    <Link to="/" className={cx('product-home')}>Trang chủ</Link>
+                                    <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
+                                </li>
+                                <li className={cx('breadrumb-title-page')}>Giới thiệu</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>

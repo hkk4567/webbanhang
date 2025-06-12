@@ -2,9 +2,9 @@ $primary-color: #c7a17a;
 $dark-color: #222;
 $text-color: #555;
 $light-bg: #f8f9fa;
-
+@import '../Main.module.scss';
 .wrapper {
-    padding: 40px 0;
+    padding: 0px 0px 40px 0px;
 }
 
 // Style cho Breadcrumb và Page Title (tái sử dụng)

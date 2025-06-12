@@ -1,0 +1,20 @@
+$primary-color: #c7a17a;
+$dark-color: #222;
+$light-bg: #f8f9fa;
+@import '../Main.module.scss';
+// Main sign-in section
+.sign-in-main {
+    padding: 60px 0;
+}
+
+.sign-in-content {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+
+    h3 {
+        font-weight: 600;
+        color: $dark-color;
+    }
+}

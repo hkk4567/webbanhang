@@ -5,6 +5,8 @@ import CartProduct from '../pages/cartProduct'
 import AboutUsPage from '../pages/AboutUsPage'
 import NewsPage from '../pages/NewsPage'
 import ContactPage from '../pages/ContactPage'
+import LoginPage from '../pages/LoginPage'
+import RegisterPage from '../pages/RegisterPage'
 
 const publicRoutes = [
     {
@@ -30,11 +32,18 @@ const publicRoutes = [
     {
         path: '/newspage',
         component: NewsPage,
-    }
-    ,
+    },
     {
         path: '/contactpage',
         component: ContactPage,
+    },
+    {
+        path: '/login',
+        component: LoginPage,
+    },
+    {
+        path: '/register',
+        component: RegisterPage,
     }
 ]
 const privateRoutes = []
