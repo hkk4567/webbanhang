@@ -1,0 +1,70 @@
+$primary-color: #c7a17a;
+$border-color: #e0e0e0;
+
+.cart-page-item {
+    border-bottom: 1px solid $border-color;
+}
+
+.item-image {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.item-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    text-decoration: none;
+
+    &:hover {
+        color: $primary-color;
+    }
+}
+
+.item-price {
+    font-size: 0.9rem;
+    color: #777;
+}
+
+.item-quantity {
+    display: flex;
+    align-items: center;
+    justify-content: center; // Căn giữa trên mobile
+}
+
+.quantity-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid $border-color;
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.quantity-input {
+    width: 45px;
+    height: 32px;
+    text-align: center;
+    border: 1px solid $border-color;
+    border-left: none;
+    border-right: none;
+}
+
+.item-total-price {
+    font-weight: bold;
+    color: $primary-color;
+    font-size: 1.1rem;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.2rem;
+    cursor: pointer;
+
+    &:hover {
+        color: #dc3545;
+    }
+}

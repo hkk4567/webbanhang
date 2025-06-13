@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import CartItem from '../../../common/CartItem';
 import {
     faBars,
     faMugHot,
@@ -14,6 +15,25 @@ import {
     faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 const cx = classNames.bind(styles);
+const mockCartData = [
+    {
+        id: 2,
+        name: 'Cà Phê Sữa Đá',
+        price: 29000,
+        quantity: 2,
+        image: 'https://images.unsplash.com/photo-1551030173-1a2952449856?auto=format&fit=crop&q=80&w=100',
+    },
+    {
+        id: 7,
+        name: 'Bánh Tiramisu',
+        price: 55000,
+        quantity: 1,
+        image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&q=80&w=100',
+    }
+];
+
+// Hàm tiện ích để định dạng tiền tệ
+const formatCurrency = (amount) => amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
 function Header() {
     // === STATE MANAGEMENT ===
@@ -27,8 +47,24 @@ function Header() {
     const navigate = useNavigate(); // Hook để điều hướng
 
     // Dữ liệu giả lập
-    const cartItemCount = 0;
     const { isLoggedIn, user, logout } = useAuth();
+    const [cartItems, setCartItems] = useState(mockCartData);
+
+    const cartItemCount = useMemo(() => cartItems.reduce((count, item) => count + item.quantity, 0), [cartItems]);
+    const totalPrice = useMemo(() => cartItems.reduce((total, item) => total + item.price * item.quantity, 0), [cartItems]);
+
+    // === EVENT HANDLERS FOR CART ===
+    const handleQuantityChange = (itemId, newQuantity) => {
+        if (newQuantity < 1) {
+            handleRemoveItem(itemId);
+        } else {
+            setCartItems(cartItems.map(item => item.id === itemId ? { ...item, quantity: newQuantity } : item));
+        }
+    };
+
+    const handleRemoveItem = (itemId) => {
+        setCartItems(cartItems.filter(item => item.id !== itemId));
+    };
 
     // === EFFECTS ===
     useEffect(() => {
@@ -84,7 +120,41 @@ function Header() {
                             {isMenuOpen && (
                                 <div className={cx('menu-icon-dropdown')}>
                                     <ul className={cx('menu-dropdown__list')}>
-                                        {/* ... Các menu item ... */}
+                                        <li className={cx('menu-dropdown__item')}>
+                                            <NavLink to="/"
+                                                className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                                onClick={closeAllMenus}>
+                                                Trang chủ
+                                            </NavLink>
+                                        </li>
+                                        <li className={cx('menu-dropdown__item')}>
+                                            <NavLink to="/aboutus"
+                                                className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                                onClick={closeAllMenus}>
+                                                Giới thiệu
+                                            </NavLink>
+                                        </li>
+                                        <li className={cx('menu-dropdown__item')}>
+                                            <NavLink to="/product"
+                                                className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                                onClick={closeAllMenus}>
+                                                Sản phẩm
+                                            </NavLink>
+                                        </li>
+                                        <li className={cx('menu-dropdown__item')}>
+                                            <NavLink to="/newspage"
+                                                className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                                onClick={closeAllMenus}>
+                                                Tin tức
+                                            </NavLink>
+                                        </li>
+                                        <li className={cx('menu-dropdown__item')}>
+                                            <NavLink to="/contactpage"
+                                                className={({ isActive }) => cx('nav__link', { active: isActive })}
+                                                onClick={closeAllMenus}>
+                                                Liên hệ
+                                            </NavLink>
+                                        </li>
                                     </ul>
                                 </div>
                             )}
@@ -173,21 +243,39 @@ function Header() {
 
                             {/* Cart (Dropdown vẫn dùng :hover từ SCSS) */}
                             <div className={cx('cart')}>
-                                <Link to="/cart" style={{ color: 'white' }}>
-                                    <FontAwesomeIcon icon={faCartShopping} />
-                                </Link>
-                                <span className={cx('cart-number')}>{cartItemCount}</span>
-                                <div className={cx('dropdown-cart', { 'dropdown-cart-list--noItem': cartItemCount === 0 })}>
-                                    <div className={cx('dropdown-cart-content')}>Không có sản phẩm nào.</div>
-                                    <ul className={cx('dropdown-cart-list')}></ul>
-                                    <div className={cx('dropdown-cart-footer')}>
-                                        <div className={cx('dropdown-cart-total')}>Tổng tiền tạm tính:
-                                            <span className={cx('dropdown-cart-price')}></span>
+                                <Link to="/cart" onClick={closeAllMenus} className={cx('cart-icon')}><FontAwesomeIcon icon={faCartShopping} /></Link>
+                                {cartItemCount > 0 && <span className={cx('cart-number')}>{cartItemCount}</span>}
+
+                                <div className={cx('dropdown-cart', { 'no-items': cartItemCount === 0 })}>
+                                    {cartItemCount > 0 ? (
+                                        <>
+                                            <h4 className={cx('dropdown-cart-header')}>Giỏ hàng</h4>
+                                            <ul className={cx('dropdown-cart-list')}>
+                                                {/* --- SỬA 3: RENDER BẰNG COMPONENT CartItem --- */}
+                                                {cartItems.map(item => (
+                                                    <CartItem
+                                                        key={item.id}
+                                                        item={item}
+                                                        onQuantityChange={handleQuantityChange}
+                                                        onRemove={handleRemoveItem}
+                                                    />
+                                                ))}
+                                            </ul>
+                                            <div className={cx('dropdown-cart-footer')}>
+                                                <div className={cx('dropdown-cart-total')}>
+                                                    <span>Tổng cộng:</span>
+                                                    <span className={cx('price-color')}>{formatCurrency(totalPrice)}</span>
+                                                </div>
+                                                <div className={cx('dropdown-cart-pay')}>
+                                                    <Link to="/cart" className={cx('link-payMoney')} onClick={() => { /* đóng dropdown nếu cần */ }}>Xem giỏ hàng chi tiết</Link>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className={cx('dropdown-cart-content')}>
+                                            <p>Giỏ hàng của bạn đang trống.</p>
                                         </div>
-                                        <div className={cx('dropdown-cart-pay')}>
-                                            <a href="./signIn.php" className={cx('link-payMoney')}>Tiến hành thanh toán</a>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 

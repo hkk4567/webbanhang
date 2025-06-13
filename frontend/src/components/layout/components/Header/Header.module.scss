@@ -6,6 +6,10 @@
 
 /* --- Keyframes --- */
 // Đặt keyframes ở đầu hoặc trong một file partial riêng
+$primary-color: #e4b95b;
+$dark-color: #333;
+$text-color: #555;
+$border-light-color: #eee;
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -38,7 +42,7 @@
         height: 120px;
     }
 }
-.active {
+.nav__link .active {
     color: #f39c12;
     font-weight: bold;
 }
@@ -66,6 +70,7 @@
         padding: 10px 10px 0 10px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         animation: fadeIn .3s ease;
+        z-index: 99999;
         // display sẽ được quản lý bởi React
     }
 
@@ -264,14 +269,20 @@
     .cart {
         position: relative;
         padding: 0 18px;
+        cursor: pointer;
 
+        .cart-icon {
+            color: #ffffff;
+        }
+        // Các đường kẻ dọc hai bên
         &::before,
         &::after {
             position: absolute;
             top: 50%;
             content: "|";
             font-size: 16px;
-            transform: translateY(-50%); // Căn giữa tốt hơn
+            color: #555; // Thêm màu cho dễ thấy
+            transform: translateY(-50%);
         }
 
         &::before {
@@ -288,85 +299,148 @@
             justify-content: center;
             position: absolute;
             top: -8px;
-            right: 10px;
-            font-size: 14px;
-            background-color: #e4b95b;
-            width: 16px;
-            height: 16px;
+            right: 8px; // Điều chỉnh lại vị trí một chút
+            font-size: 12px; // Giảm kích thước font
+            font-weight: bold;
+            color: $dark-color;
+            background-color: $primary-color;
+            width: 20px; // Tăng kích thước
+            height: 20px;
             border-radius: 50%;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.301);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
-        // Dropdown của cart vẫn dùng :hover
+        // --- CƠ CHẾ HIỂN THỊ DROPDOWN BẰNG :hover ---
         &:hover .dropdown-cart {
-            display: block;
+            display: block; // Hiển thị dropdown khi hover vào .cart
         }
 
         .dropdown-cart {
             display: none; // Mặc định ẩn
             position: absolute;
             top: 150%;
-            right: -4px;
-            color: black;
+            right: -15px; // Căn chỉnh lại cho đẹp
+            color: $dark-color;
             background-color: white;
-            box-shadow: 0 1px 1px black;
-            width: 300px;
-            padding: 4px 0;
-            border-radius: 4px;
-            animation: fadeIn .2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            width: 380px; // Tăng chiều rộng để vừa với CartItem
+            border-radius: 8px;
+            animation: fadeIn 0.2s ease;
+            z-index: 100;
 
+            // Vùng đệm trong suốt để giữ hover khi di chuyển chuột
             &::before {
                 position: absolute;
                 content: "";
                 top: -18px;
-                left: 0px;
+                left: 0;
                 width: 100%;
-                height: 18px;
+                height: 20px;
             }
 
-            // State khi giỏ hàng rỗng
-            &.dropdown-cart-list--noItem {
+            // --- Modifier class khi giỏ hàng rỗng ---
+            &.no-items {
 
-                .dropdown-cart-footer,
-                .dropdown-cart-list {
+                .dropdown-cart-list,
+                .dropdown-cart-footer {
                     display: none;
                 }
 
                 .dropdown-cart-content {
-                    display: block;
+                    display: flex;
                 }
             }
 
             .dropdown-cart-content {
-                padding: 18px 20px;
+                display: none; // Mặc định ẩn
+                padding: 50px 20px;
                 text-align: center;
-                display: none;
+                justify-content: center;
+                align-items: center;
+                color: #888;
+            }
+
+            .dropdown-cart-header {
+                font-size: 1rem;
+                font-weight: 600;
+                color: $dark-color;
+                padding: 12px 15px;
+                margin: 0;
+                border-bottom: 1px solid $border-light-color;
+                background-color: #fcfcfc;
+                text-align: left;       
             }
 
             .dropdown-cart-list {
-                max-height: 260px;
+                max-height: 400px;
                 padding: 0 15px;
                 overflow-y: auto;
                 list-style: none;
 
                 &::-webkit-scrollbar {
-                    width: 4px;
+                    width: 5px;
                 }
 
                 &::-webkit-scrollbar-track {
-                    background-color: #cccccc63;
-                    border-radius: 4px;
+                    background-color: #f1f1f1;
                 }
 
                 &::-webkit-scrollbar-thumb {
-                    background: #e4b95b;
+                    background: #ccc;
                     border-radius: 4px;
+
+                    &:hover {
+                        background: #aaa;
+                    }
                 }
             }
 
-            // Các style cho item và footer trong cart
-            // ... (Copy/paste các style của .dropdown-cart-item, .dropdown-cart-footer từ file gốc vào đây)
-        }
+            .dropdown-cart-footer {
+                padding: 15px;
+                border-top: 1px solid $border-light-color; // Đường kẻ phân cách
+                background-color: #fdfdfd; // Màu nền hơi khác để tách biệt
+            }
+
+            .dropdown-cart-total {
+                display: flex;
+                justify-content: space-between; // Đẩy 2 item ra hai bên
+                align-items: center; // Căn giữa theo chiều dọc
+                margin-bottom: 15px; // Khoảng cách với nút bên dưới
+                font-size: 1rem;
+                color: $text-color;
+                font-weight: 500;
+            }
+
+            // Style cho nút "Xem giỏ hàng" (từ thẻ <Link>)
+            .link-payMoney {
+                display: block; // Để nút chiếm toàn bộ chiều rộng
+                width: 100%;
+                padding: 12px 20px;
+                background-color: $primary-color;
+                color: white;
+                text-align: center;
+                text-decoration: none; // Bỏ gạch chân của link
+                font-weight: bold;
+                border-radius: 5px; // Bo góc nhẹ
+                transition: background-color 0.3s ease, transform 0.2s ease;
+
+                &:hover {
+                    background-color: darken($primary-color, 8%); // Dùng hàm của SASS để làm màu tối đi một chút
+                    transform: translateY(-2px); // Hiệu ứng nhấc lên khi hover
+                }
+
+                &:active {
+                    transform: translateY(0); // Hiệu ứng nhấn xuống
+                }
+            }
+
+            // Class tiện ích để làm nổi bật giá tiền
+            .price-color {
+                color: $primary-color;
+                font-weight: bold;
+                font-size: 1.1rem; // Làm cho giá tiền to hơn một chút       
+            }
+        }   
     }
 
     .user-icon {
