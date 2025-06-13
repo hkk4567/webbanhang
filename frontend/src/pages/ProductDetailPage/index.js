@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './ProductDetailPage.module.scss';
 
-// Import dữ liệu giả
+// --- SỬA 2: IMPORT useCart ĐỂ TRUY CẬP GIỎ HÀNG ---
+import { useCart } from '../../context/CartContext';
 import { mockAllProducts } from '../../data/products';
 
 // Import Font Awesome
@@ -11,39 +12,46 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight, faMinus, faPlus, faCartPlus } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookSquare, faInstagram, faGooglePlusG, faPinterest } from '@fortawesome/free-brands-svg-icons';
 
-
 const cx = classNames.bind(styles);
 
 function ProductDetailPage() {
-    const { id } = useParams(); // Lấy 'id' từ URL, ví dụ: /product/ca-phe-den-da
+    const { id } = useParams(); // Lấy 'id' từ URL
+
+    // --- SỬA 3: LẤY HÀM addToCart TỪ CONTEXT ---
+    const { addToCart } = useCart();
+
     const [product, setProduct] = useState(null);
     const [quantity, setQuantity] = useState(1);
 
-    // Tìm sản phẩm dựa trên id từ URL khi component được mount hoặc id thay đổi
+    // Tìm sản phẩm dựa trên id từ URL
     useEffect(() => {
+        // `+id` chuyển đổi id (string) từ URL thành number để so sánh
         const foundProduct = mockAllProducts.find(p => p.id === +id);
         setProduct(foundProduct);
-        setQuantity(1); // Reset số lượng về 1 mỗi khi chuyển trang sản phẩm
+        setQuantity(1);
     }, [id]);
 
     const handleQuantityChange = (amount) => {
         setQuantity(prevQuantity => {
             const newQuantity = prevQuantity + amount;
-            return newQuantity < 1 ? 1 : newQuantity; // Đảm bảo số lượng không nhỏ hơn 1
+            return newQuantity < 1 ? 1 : newQuantity;
         });
     };
 
+    // --- SỬA 4: CẬP NHẬT HÀM XỬ LÝ THÊM VÀO GIỎ ---
     const handleAddToCart = () => {
-        console.log(`Đã thêm ${quantity} sản phẩm "${product.name}" vào giỏ hàng.`);
-        alert(`Đã thêm ${quantity} "${product.name}" vào giỏ hàng!`);
+        if (product) {
+            // Gọi hàm từ context, truyền vào sản phẩm và số lượng đã chọn
+            addToCart(product, quantity);
+            alert(`Đã thêm ${quantity} sản phẩm "${product.name}" vào giỏ hàng!`);
+        }
     };
 
     // Xử lý khi sản phẩm không được tìm thấy
     if (!product) {
         return (
             <div className="container text-center py-5">
-                <h2>Sản phẩm không tồn tại</h2>
-                <p>Không thể tìm thấy sản phẩm bạn yêu cầu. Vui lòng quay lại trang sản phẩm.</p>
+                <h2>Đang tải... hoặc sản phẩm không tồn tại</h2>
                 <Link to="/product" className="btn btn-primary">Xem tất cả sản phẩm</Link>
             </div>
         );
@@ -51,7 +59,7 @@ function ProductDetailPage() {
 
     return (
         <>
-            {/* Breadcrumb */}
+            {/* Breadcrumb (giữ nguyên) */}
             <div className={cx('bread-crumb')}>
                 <div className="container">
                     <ul className={cx('breadrumb')}>
@@ -70,7 +78,7 @@ function ProductDetailPage() {
                 </div>
             </div>
 
-            {/* Product Details */}
+            {/* Product Details (giữ nguyên) */}
             <div className={cx('product-container-box')}>
                 <div className="container">
                     <div className="row">
@@ -93,11 +101,12 @@ function ProductDetailPage() {
                                         className={cx('quantity-input')}
                                         type="text"
                                         value={quantity}
-                                        readOnly // Ngăn người dùng nhập trực tiếp
+                                        readOnly
                                     />
                                     <button type="button" className={cx('quantity-btn')} onClick={() => handleQuantityChange(1)}>
                                         <FontAwesomeIcon icon={faPlus} />
                                     </button>
+                                    {/* Nút này giờ đã được kết nối với Context */}
                                     <button type="button" className={cx('add-to-cart-btn')} onClick={handleAddToCart}>
                                         <FontAwesomeIcon icon={faCartPlus} className="me-2" />
                                         Thêm vào giỏ hàng

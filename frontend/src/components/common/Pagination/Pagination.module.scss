@@ -1,0 +1,55 @@
+$primary-color: #c7a17a;
+
+.pagination-container {
+    display: flex;
+    list-style-type: none;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+    margin-top: 40px;
+}
+
+.pagination-item {
+    margin: 0 4px;
+
+    button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid #ddd;
+        background-color: white;
+        color: #555;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background-color: #f0f0f0;
+            border-color: #ccc;
+        }
+    }
+
+    &.selected button {
+        background-color: $primary-color;
+        border-color: $primary-color;
+        color: white;
+        font-weight: bold;
+    }
+
+    &.disabled button {
+        color: #ccc;
+        cursor: not-allowed;
+
+        &:hover {
+            background-color: white;
+        }
+    }
+
+    &.dots {
+        color: #aaa;
+        padding: 0 10px;
+    }
+}

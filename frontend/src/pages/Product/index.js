@@ -1,32 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom'; // Import Link để điều hướng
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss';
 import ProductCard from '../../components/common/ProductCard'; // Import component
 import { mockAllProducts } from '../../data/products'; // Import dữ liệu giả
 
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/common/Pagination';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faAngleRight,
     faTableCells,
     faList,
-    faChevronLeft,
-    faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 // Khởi tạo hàm cx để sử dụng CSS Modules
 const cx = classNames.bind(styles);
-
+const ITEMS_PER_PAGE = 12; // Đặt số sản phẩm mỗi trang
 function Product() {
+    const [products] = useState(mockAllProducts);
+    const {
+        currentData,
+        currentPage,
+        maxPage,
+        jump
+    } = usePagination(products, ITEMS_PER_PAGE);
     // --- Các hàm xử lý sự kiện mẫu ---
     // Bạn sẽ thay thế logic bên trong bằng logic thật của ứng dụng
     const handleCategoryFilter = (category) => {
         console.log(`Đang lọc sản phẩm theo danh mục: ${category}`);
         // Ví dụ: setFilterState({ ...filterState, category: category });
-    };
-
-    const handlePagination = (direction) => {
-        console.log(`Chuyển trang: ${direction}`);
-        // Ví dụ: setCurrentPage(currentPage + (direction === 'next' ? 1 : -1));
     };
 
     return (
@@ -157,37 +160,26 @@ function Product() {
 
                             {/* Danh sách sản phẩm (render sản phẩm vào đây) */}
                             <div className={cx('product-search-item', 'row')}>
-                                {mockAllProducts.map(product => (
-                                    // Bọc mỗi card trong một cột của Bootstrap
-                                    <div key={product.id} className="col-lg-4 col-md-6 mb-5">
-                                        <ProductCard product={product} />
+                                {currentData.length > 0 ? (
+                                    currentData.map(product => (
+                                        <div key={product.id} className="col-lg-4 col-md-6 mb-5">
+                                            <ProductCard product={product} />
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="col-12 text-center py-5">
+                                        <h4>Không có sản phẩm nào phù hợp.</h4>
                                     </div>
-                                ))}
+                                )}
                             </div>
 
+
                             {/* Phân trang */}
-                            <div className={cx('product-search-pagination-container')}>
-                                {/* SỬA 3: Chuyển nút phân trang thành <button> */}
-                                <button
-                                    type="button"
-                                    className={cx('pagination-button', 'left-pagination-button')}
-                                    onClick={() => handlePagination('prev')}
-                                    aria-label="Trang trước"
-                                >
-                                    <FontAwesomeIcon icon={faChevronLeft} />
-                                </button>
-                                <div className={cx('product-search-pagination')}>
-                                    {/* Logic render các nút số trang sẽ ở đây */}
-                                </div>
-                                <button
-                                    type="button"
-                                    className={cx('pagination-button', 'right-pagination-button')}
-                                    onClick={() => handlePagination('next')}
-                                    aria-label="Trang sau"
-                                >
-                                    <FontAwesomeIcon icon={faChevronRight} />
-                                </button>
-                            </div>
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPageCount={maxPage}
+                                onPageChange={page => jump(page)}
+                            />
                         </div>
                     </div>
                 </div>

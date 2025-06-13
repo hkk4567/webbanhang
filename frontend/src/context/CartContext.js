@@ -11,19 +11,18 @@ export function CartProvider({ children }) {
     // --- CÁC HÀM XỬ LÝ GIỎ HÀNG ---
 
     // Hàm thêm sản phẩm vào giỏ
-    const addToCart = (product) => {
+    const addToCart = (product, quantity = 1) => {
         setCartItems(prevItems => {
-            // Kiểm tra xem sản phẩm đã có trong giỏ chưa
             const existingItem = prevItems.find(item => item.id === product.id);
 
             if (existingItem) {
-                // Nếu đã có, chỉ tăng số lượng
+                // Nếu đã có, cộng thêm số lượng mới vào số lượng cũ
                 return prevItems.map(item =>
-                    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                    item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
                 );
             } else {
-                // Nếu chưa có, thêm sản phẩm mới vào giỏ với số lượng là 1
-                return [...prevItems, { ...product, quantity: 1 }];
+                // Nếu chưa có, thêm sản phẩm mới vào giỏ với số lượng được cung cấp
+                return [...prevItems, { ...product, quantity: quantity }];
             }
         });
     };

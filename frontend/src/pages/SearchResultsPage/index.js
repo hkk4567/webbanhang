@@ -5,13 +5,15 @@ import styles from './SearchResultsPage.module.scss';
 
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleRight, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 
 // Dữ liệu giả - Trong thực tế, bạn sẽ lấy từ API
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/common/Pagination';
 import ProductCard from '../../components/common/ProductCard'; // Import component
 import { mockAllProducts } from '../../data/products'; // Giả sử bạn có file này
 const cx = classNames.bind(styles);
-
+const ITEMS_PER_PAGE = 12;
 function SearchResultsPage() {
     // Lấy query param từ URL (ví dụ: /search?q=cafe)
     const [searchParams] = useSearchParams();
@@ -40,7 +42,17 @@ function SearchResultsPage() {
 
         return () => clearTimeout(timer); // Cleanup function
     }, [query]);
+    //  SỬ DỤNG HOOK PHÂN TRANG VỚI KẾT QUẢ TÌM KIẾM ---
+    const {
+        currentData,
+        currentPage,
+        maxPage,
+        jump
+    } = usePagination(searchResults, ITEMS_PER_PAGE);
 
+    useEffect(() => {
+        jump(1);
+    }, [searchResults, jump]);
     return (
         <>
             {/* Breadcrumb */}
@@ -83,9 +95,8 @@ function SearchResultsPage() {
 
                     {/* Danh sách sản phẩm */}
                     <div className={cx('product-search-item', 'row', 'mt-4')}>
-                        {!isLoading && searchResults.length > 0 &&
-                            searchResults.map(product => (
-                                // Bọc mỗi card trong một cột của Bootstrap
+                        {!isLoading && currentData.length > 0 &&
+                            currentData.map(product => (
                                 <div key={product.id} className="col-lg-3 col-md-6 mb-5">
                                     <ProductCard product={product} />
                                 </div>
@@ -99,19 +110,13 @@ function SearchResultsPage() {
                         )}
                     </div>
 
-                    {/* Phân trang (chỉ hiển thị khi có kết quả) */}
-                    {!isLoading && searchResults.length > 0 && (
-                        <div className={cx('product-search-pagination-container')}>
-                            <button type="button" className={cx('pagination-button', 'left-pagination-button')}>
-                                <FontAwesomeIcon icon={faChevronLeft} />
-                            </button>
-                            <div className={cx('product-search-pagination')}>
-                                {/* Logic render các nút số trang sẽ ở đây */}
-                            </div>
-                            <button type="button" className={cx('pagination-button', 'right-pagination-button')}>
-                                <FontAwesomeIcon icon={faChevronRight} />
-                            </button>
-                        </div>
+                    {/* --- BƯỚC 5: SỬ DỤNG COMPONENT PHÂN TRANG --- */}
+                    {!isLoading && searchResults.length > ITEMS_PER_PAGE && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPageCount={maxPage}
+                            onPageChange={page => jump(page)}
+                        />
                     )}
                 </div>
             </div>
