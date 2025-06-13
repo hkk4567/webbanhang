@@ -1,0 +1,116 @@
+$primary-color: #c7a17a;
+$dark-color: #222;
+$text-color: #555;
+
+@import '../Main.module.scss';
+.breadrumb-product-name {
+    font-weight: bold;
+}
+
+// Product Container
+.product-container-box {
+    padding: 40px 0 80px;
+}
+
+.product-image-container {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 8px;
+
+    img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+}
+
+.product-detail {
+    .detail-name {
+        font-size: 2rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: $dark-color;
+    }
+
+    .detail-price {
+        font-size: 2.2rem;
+        color: $primary-color;
+        font-weight: bold;
+        margin: 20px 0;
+        border-bottom: 1px dashed #ccc;
+        padding-bottom: 20px;
+    }
+
+    .detail-quantity {
+        display: flex;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .quantity-btn {
+        background: none;
+        border: 1px solid #ccc;
+        padding: 10px 15px;
+        cursor: pointer;
+    }
+
+    .quantity-input {
+        width: 60px;
+        text-align: center;
+        font-size: 1.1rem;
+        border: 1px solid #ccc;
+        border-left: none;
+        border-right: none;
+        padding: 8px 0;
+        height: 46px; // Để bằng với button
+    }
+
+    .add-to-cart-btn {
+        background-color: $primary-color;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin-left: 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+
+        &:hover {
+            background-color: darken($primary-color, 10%);
+        }
+    }
+
+    .detail-description {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: $text-color;
+    }
+
+    .share-social-media {
+        display: flex;
+        align-items: center;
+        padding: 20px 0;
+        font-size: 1.1rem;
+        border-top: 1px dashed #ccc;
+        margin-top: 20px;
+
+        a {
+            font-size: 1rem;
+            margin-left: 15px;
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: opacity 0.3s;
+
+            &:hover {
+                opacity: 0.8;
+            }
+        }
+    }
+}

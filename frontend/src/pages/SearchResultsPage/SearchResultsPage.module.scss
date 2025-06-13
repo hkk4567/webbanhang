@@ -2,11 +2,6 @@ $primary-color: #c7a17a;
 $dark-color: #222;
 @import '../Main.module.scss';
 
-.home a {
-    color: $primary-color;
-    font-weight: 500;
-}
-
 .title-page {
     font-size: 1.8rem;
     font-weight: 600;

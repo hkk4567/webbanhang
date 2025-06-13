@@ -29,7 +29,7 @@ function ProductCard({ product }) {
         <div className={cx('product-card-wrapper')}>
             <div className={cx('product-item-box')}>
                 {/* Link bao bọc hình ảnh sản phẩm, dẫn đến trang chi tiết */}
-                <Link to={`/product/${product.slug}`} className={cx('link-product')}>
+                <Link to={`/product/${product.id}`} className={cx('link-product')}>
                     <img src={product.image} alt={product.name} />
                 </Link>
 
@@ -52,7 +52,7 @@ function ProductCard({ product }) {
             {/* Tên sản phẩm */}
             <div className={cx('product-item-box-content')}>
                 <h3>
-                    <Link to={`/product/${product.slug}`}>{product.name}</Link>
+                    <Link to={`/product/${product.id}`}>{product.name}</Link>
                 </h3>
             </div>
         </div>

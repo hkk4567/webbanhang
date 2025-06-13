@@ -1,0 +1,145 @@
+$primary-color: #c7a17a;
+$dark-color: #222;
+$text-color: #555;
+$border-color: #e0e0e0;
+$status-delivered-color: #28a745;
+$status-cancelled-color: #dc3545;
+
+@import '../Main.module.scss';
+
+.home a {
+    color: $primary-color;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.title-page {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: $dark-color;
+}
+
+// Main content
+.main {
+    padding: 40px 0 80px;
+}
+
+// History Item
+.history-user {
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+    padding-bottom: 15px;
+    border-bottom: 1px solid $border-color;
+    margin-bottom: 15px;
+}
+
+.order-status {
+    padding: 5px 10px;
+    border-radius: 15px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+
+    // Status colors
+    &.status--đã-giao-hàng {
+        background-color: $status-delivered-color;
+    }
+
+    &.status--đã-hủy {
+        background-color: $status-cancelled-color;
+    }
+
+    // Thêm các status khác nếu cần
+}
+
+.product-history {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px dashed #eee;
+
+    &:last-of-type {
+        border-bottom: none;
+    }
+}
+
+.product-history-detail {
+    display: flex;
+    align-items: center;
+
+    img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 15px;
+    }
+}
+
+.product-info {
+    .product-name {
+        font-weight: 600;
+        color: $dark-color;
+    }
+
+    .product-quantity {
+        font-size: 0.9rem;
+        color: $text-color;
+    }
+}
+
+.product-price {
+    font-weight: 500;
+}
+
+.order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid $border-color;
+}
+
+.product-history-date {
+    font-size: 0.9rem;
+    color: $text-color;
+}
+
+.product-history-total-price {
+    font-size: 1.1rem;
+    color: $dark-color;
+
+    strong {
+        color: $primary-color;
+    }
+}
+
+// Pagination
+.product-search-pagination-container {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pagination-button {
+    background: none;
+    border: 1px solid #ccc;
+    color: $dark-color;
+    padding: 8px 14px;
+    margin: 0 4px;
+    cursor: pointer;
+}

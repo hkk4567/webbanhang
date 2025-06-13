@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './LoginPage.module.scss';
-
+//sử lý login
+import { useAuth } from '../../context/AuthContext';
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
@@ -13,14 +14,19 @@ function LoginPage() {
     // Sử dụng useState để quản lý trạng thái của form
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
+    const { login } = useAuth(); // Lấy hàm login từ context
+    const navigate = useNavigate();
     // Hàm xử lý khi người dùng nhấn nút "Đăng nhập"
     const handleSubmit = (e) => {
         e.preventDefault(); // Ngăn form reload lại trang
-        console.log('Đăng nhập với thông tin:');
-        console.log({ email, password });
-        // Tại đây, bạn sẽ gọi API để xác thực người dùng
-        alert('Đăng nhập thành công! (Kiểm tra console để xem dữ liệu)');
+        const userDataFromApi = {
+            name: 'Nguyen Van A', // Lấy từ API
+            email: email,        // Lấy từ API
+        };
+
+        login(userDataFromApi); // Truyền dữ liệu người dùng vào hàm login
+
+        navigate('/', { replace: true });
     };
 
     return (
@@ -32,7 +38,7 @@ function LoginPage() {
                         <div className="col-12">
                             <ul className={cx('breadrumb')}>
                                 <li className={cx('home')}>
-                                    <Link to="/" className={cx('product-home')}>Trang chủ</Link>
+                                    <Link to="/" >Trang chủ</Link>
                                     <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
                                 </li>
                                 <li>Đăng nhập tài khoản</li>

@@ -169,7 +169,7 @@ function RegisterPage() {
                         <div className="col-12">
                             <ul className={cx('breadrumb')}>
                                 <li className={cx('home')}>
-                                    <Link to="/" className={cx('product-home')}>Trang chủ</Link>
+                                    <Link to="/">Trang chủ</Link>
                                     <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
                                 </li>
                                 <li>Đăng ký tài khoản</li>

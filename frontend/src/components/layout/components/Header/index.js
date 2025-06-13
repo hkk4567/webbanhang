@@ -3,6 +3,7 @@ import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../../../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faBars,
@@ -21,13 +22,13 @@ function Header() {
     const [isSearchOpen, setSearchOpen] = useState(false);
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
 
-    // --- SỬA 2: THÊM STATE ĐỂ LƯU TỪ KHÓA TÌM KIẾM ---
+    // --- THÊM STATE ĐỂ LƯU TỪ KHÓA TÌM KIẾM ---
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate(); // Hook để điều hướng
 
     // Dữ liệu giả lập
     const cartItemCount = 0;
-    const isLoggedIn = false;
+    const { isLoggedIn, user, logout } = useAuth();
 
     // === EFFECTS ===
     useEffect(() => {
@@ -40,7 +41,7 @@ function Header() {
         };
     }, []);
 
-    // --- SỬA 3: HÀM XỬ LÝ KHI SUBMIT FORM TÌM KIẾM ---
+    // --- HÀM XỬ LÝ KHI SUBMIT FORM TÌM KIẾM ---
     const handleSearchSubmit = (e) => {
         e.preventDefault(); // Ngăn form tải lại trang
         if (searchTerm.trim()) {
@@ -51,6 +52,19 @@ function Header() {
             // Xóa nội dung ô tìm kiếm
             setSearchTerm('');
         }
+    };
+
+    const handleLogout = () => {
+        logout(); // Gọi hàm logout từ context
+        setUserMenuOpen(false); // Đóng menu user
+        navigate('/'); // Điều hướng về trang chủ
+    };
+
+    // Hàm đóng tất cả các menu con
+    const closeAllMenus = () => {
+        setMenuOpen(false);
+        setSearchOpen(false);
+        setUserMenuOpen(false);
     };
 
     return (
@@ -96,35 +110,35 @@ function Header() {
                                 <li className={cx('nav__item')}>
                                     <NavLink to="/"
                                         className={({ isActive }) => cx('nav__link', { active: isActive })}
-                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        onClick={closeAllMenus}>
                                         Trang chủ
                                     </NavLink>
                                 </li>
                                 <li className={cx('nav__item')}>
                                     <NavLink to="/aboutus"
                                         className={({ isActive }) => cx('nav__link', { active: isActive })}
-                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        onClick={closeAllMenus}>
                                         Giới thiệu
                                     </NavLink>
                                 </li>
                                 <li className={cx('nav__item')}>
                                     <NavLink to="/product"
                                         className={({ isActive }) => cx('nav__link', { active: isActive })}
-                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        onClick={closeAllMenus}>
                                         Sản phẩm
                                     </NavLink>
                                 </li>
                                 <li className={cx('nav__item')}>
                                     <NavLink to="/newspage"
                                         className={({ isActive }) => cx('nav__link', { active: isActive })}
-                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        onClick={closeAllMenus}>
                                         Tin tức
                                     </NavLink>
                                 </li>
                                 <li className={cx('nav__item')}>
                                     <NavLink to="/contactpage"
                                         className={({ isActive }) => cx('nav__link', { active: isActive })}
-                                        onClick={() => { setSearchOpen(false); setUserMenuOpen(false) }}>
+                                        onClick={closeAllMenus}>
                                         Liên hệ
                                     </NavLink>
                                 </li>
@@ -182,17 +196,21 @@ function Header() {
                                 <FontAwesomeIcon icon={faUser} onClick={() => setUserMenuOpen(!isUserMenuOpen)} />
                                 {isUserMenuOpen && (
                                     <>
+                                        {/* --- SỬA 4: SỬ DỤNG STATE isLoggedIn THẬT --- */}
                                         {!isLoggedIn ? (
                                             <ul className={cx('dropdown-user')}>
-                                                <li><Link to="/login">Đăng nhập</Link></li>
-                                                <li><Link to="/register">Đăng ký</Link></li>
+                                                <li><Link to="/login" onClick={() => setUserMenuOpen(false)}>Đăng nhập</Link></li>
+                                                <li><Link to="/register" onClick={() => setUserMenuOpen(false)}>Đăng ký</Link></li>
                                             </ul>
                                         ) : (
                                             <div className={cx('dropdown-user-info')}>
-                                                <div className={cx('dropdown-user-info-name')}>Tên người dùng</div>
-                                                <div className={cx('dropdown-user-info-email')}>Email người dùng</div>
-                                                <div className={cx('dropdown-user-info-history')}><Link to="/history">Lịch sử mua hàng</Link></div>
-                                                <div className={cx('dropdown-user-info-logout')}>
+                                                <div className={cx('dropdown-user-info-name')}>Xin chào, {user?.name || 'Bạn'}</div>
+                                                <div className={cx('dropdown-user-info-email')}>{user?.email}</div>
+                                                <div className={cx('dropdown-user-info-history')}>
+                                                    <Link to="/history" onClick={() => setUserMenuOpen(false)}>Lịch sử mua hàng</Link>
+                                                </div>
+                                                {/* --- SỬA 5: THÊM onClick VÀO NÚT ĐĂNG XUẤT --- */}
+                                                <div className={cx('dropdown-user-info-logout')} onClick={handleLogout}>
                                                     <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất
                                                 </div>
                                             </div>

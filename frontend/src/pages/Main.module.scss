@@ -104,6 +104,11 @@ $font-size-xl: 24px;
             text-decoration: none;
             margin-right: 10px;
         }
+        .breadrumb-product-type a {
+            color: $primary-color;
+            font-weight: 500;
+            text-decoration: none;
+        }
     }
 
     .title-page {
@@ -112,6 +117,11 @@ $font-size-xl: 24px;
         text-transform: uppercase;
         font-weight: bold;
     }
+}
+.home a {
+    color: $primary-color;
+    font-weight: 500;
+    text-decoration: none;
 }
 
 

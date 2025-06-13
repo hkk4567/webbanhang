@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom'; // Import Link để điều hướng
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss';
-import ProductCard from '../../components/ProductCard'; // Import component
+import ProductCard from '../../components/common/ProductCard'; // Import component
 import { mockAllProducts } from '../../data/products'; // Import dữ liệu giả
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -39,7 +39,7 @@ function Product() {
                             <ul className={cx('breadrumb')}>
                                 <li className={cx('home')}>
                                     {/* SỬA 1: Dùng Link của React Router cho điều hướng */}
-                                    <Link to="/" className={cx('product-home')}>Trang chủ</Link>
+                                    <Link to="/" >Trang chủ</Link>
                                     <FontAwesomeIcon icon={faAngleRight} className={cx('icon-spacing')} />
                                 </li>
                                 <li className={cx('breadrumb-title-page')} style={{ textTransform: 'capitalize' }}>
