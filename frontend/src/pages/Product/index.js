@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'; // Import Link để điều hướng
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss';
 import ProductCard from '../../components/common/ProductCard'; // Import component
+import ProductQuickViewModal from '../../components/common/ProductQuickViewModal';
 import { mockAllProducts } from '../../data/products'; // Import dữ liệu giả
 
 import { usePagination } from '../../hooks/usePagination';
@@ -18,6 +19,20 @@ import {
 const cx = classNames.bind(styles);
 const ITEMS_PER_PAGE = 12; // Đặt số sản phẩm mỗi trang
 function Product() {
+    const [showModal, setShowModal] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    // --- HÀM ĐỂ MỞ MODAL ---
+    // Hàm này sẽ được truyền xuống cho ProductCard
+    const handleShowModal = (product) => {
+        setSelectedProduct(product);
+        setShowModal(true);
+    };
+
+    // --- HÀM ĐỂ ĐÓNG MODAL ---
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setSelectedProduct(null); // Reset sản phẩm đã chọn
+    };
     const [products] = useState(mockAllProducts);
     const {
         currentData,
@@ -163,7 +178,7 @@ function Product() {
                                 {currentData.length > 0 ? (
                                     currentData.map(product => (
                                         <div key={product.id} className="col-lg-4 col-md-6 mb-5">
-                                            <ProductCard product={product} />
+                                            <ProductCard product={product} onViewProduct={handleShowModal} />
                                         </div>
                                     ))
                                 ) : (
@@ -184,6 +199,11 @@ function Product() {
                     </div>
                 </div>
             </div>
+            <ProductQuickViewModal
+                show={showModal}
+                handleClose={handleCloseModal}
+                product={selectedProduct}
+            />
         </>
     );
 }

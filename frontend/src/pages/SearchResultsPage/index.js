@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './SearchResultsPage.module.scss';
@@ -11,37 +11,45 @@ import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 import { usePagination } from '../../hooks/usePagination';
 import Pagination from '../../components/common/Pagination';
 import ProductCard from '../../components/common/ProductCard'; // Import component
+import ProductQuickViewModal from '../../components/common/ProductQuickViewModal';
 import { mockAllProducts } from '../../data/products'; // Giả sử bạn có file này
 const cx = classNames.bind(styles);
 const ITEMS_PER_PAGE = 12;
 function SearchResultsPage() {
+    const [showModal, setShowModal] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    // --- HÀM ĐỂ MỞ MODAL ---
+    // Hàm này sẽ được truyền xuống cho ProductCard
+    const handleShowModal = (product) => {
+        setSelectedProduct(product);
+        setShowModal(true);
+    };
+
+    // --- HÀM ĐỂ ĐÓNG MODAL ---
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setSelectedProduct(null); // Reset sản phẩm đã chọn
+    };
     // Lấy query param từ URL (ví dụ: /search?q=cafe)
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q') || ''; // Lấy giá trị của 'q'
-
-    // State để lưu trữ kết quả tìm kiếm và trạng thái tải
-    const [searchResults, setSearchResults] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const type = searchParams.get('type') || '';
+    const priceFrom = searchParams.get('price_from') || '';
+    const priceTo = searchParams.get('price_to') || '';
 
     // useEffect để "tìm kiếm" mỗi khi query thay đổi
-    useEffect(() => {
-        setIsLoading(true);
-
-        // Mô phỏng việc gọi API
-        const timer = setTimeout(() => {
-            if (query) {
-                const filteredProducts = mockAllProducts.filter((product) =>
-                    product.name.toLowerCase().includes(query.toLowerCase()),
-                );
-                setSearchResults(filteredProducts);
-            } else {
-                setSearchResults([]); // Nếu không có query, không hiển thị kết quả
-            }
-            setIsLoading(false);
-        }, 500); // Giả lập độ trễ mạng
-
-        return () => clearTimeout(timer); // Cleanup function
-    }, [query]);
+    const searchResults = useMemo(() => {
+        if (!query && !type && !priceFrom && !priceTo) {
+            return [];
+        }
+        return mockAllProducts.filter((product) => {
+            const nameMatch = query ? product.name.toLowerCase().includes(query.toLowerCase()) : true;
+            const typeMatch = type ? product.category === type : true;
+            const priceFromMatch = priceFrom ? product.price >= Number(priceFrom) : true;
+            const priceToMatch = priceTo ? product.price <= Number(priceTo) : true;
+            return nameMatch && typeMatch && priceFromMatch && priceToMatch;
+        });
+    }, [query, type, priceFrom, priceTo]);
     //  SỬ DỤNG HOOK PHÂN TRANG VỚI KẾT QUẢ TÌM KIẾM ---
     const {
         currentData,
@@ -82,36 +90,31 @@ function SearchResultsPage() {
                     {/* Kết quả tìm kiếm */}
                     <div className="row">
                         <div className="col-12">
-                            {isLoading ? (
-                                <p className={cx('search-text')}>Đang tìm kiếm...</p>
-                            ) : (
-                                <p className={cx('search-text')}>
-                                    Có <span className={cx('search-product-quantity')}>{searchResults.length}</span> kết quả
-                                    tìm kiếm phù hợp.
-                                </p>
-                            )}
+                            <p className={cx('search-text')}>
+                                Có <span className={cx('search-product-quantity')}>{searchResults.length}</span> kết quả
+                                tìm kiếm phù hợp.
+                            </p>
                         </div>
                     </div>
 
                     {/* Danh sách sản phẩm */}
                     <div className={cx('product-search-item', 'row', 'mt-4')}>
-                        {!isLoading && currentData.length > 0 &&
+                        {currentData.length > 0 ? (
                             currentData.map(product => (
                                 <div key={product.id} className="col-lg-3 col-md-6 mb-5">
-                                    <ProductCard product={product} />
+                                    <ProductCard product={product} onViewProduct={handleShowModal} />
                                 </div>
                             ))
-                        }
-                        {!isLoading && searchResults.length === 0 && query && (
+                        ) : (
                             <div className="col-12 text-center py-5">
-                                <h3>Không tìm thấy sản phẩm nào cho từ khóa "{query}"</h3>
-                                <p>Vui lòng thử với từ khóa khác.</p>
+                                <h3>Không tìm thấy sản phẩm nào.</h3>
+                                <p>Vui lòng thử lại với các tiêu chí khác.</p>
                             </div>
                         )}
                     </div>
 
-                    {/* --- BƯỚC 5: SỬ DỤNG COMPONENT PHÂN TRANG --- */}
-                    {!isLoading && searchResults.length > ITEMS_PER_PAGE && (
+                    {/* Phân trang */}
+                    {searchResults.length > ITEMS_PER_PAGE && (
                         <Pagination
                             currentPage={currentPage}
                             totalPageCount={maxPage}
@@ -120,6 +123,11 @@ function SearchResultsPage() {
                     )}
                 </div>
             </div>
+            <ProductQuickViewModal
+                show={showModal}
+                handleClose={handleCloseModal}
+                product={selectedProduct}
+            />
         </>
     );
 }

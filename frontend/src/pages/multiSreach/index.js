@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss'; // Giả sử file SCSS của bạn nằm ở đây
 
@@ -17,18 +17,29 @@ function MultiSearch() {
     const [productType, setProductType] = useState('');
     const [priceFrom, setPriceFrom] = useState('');
     const [priceTo, setPriceTo] = useState('');
-
+    const navigate = useNavigate();
     // Hàm xử lý khi nhấn nút tìm kiếm
     const handleSearch = () => {
-        // Thu thập tất cả dữ liệu từ state
-        const searchData = {
-            term: searchTerm,
-            type: productType,
-            from: priceFrom,
-            to: priceTo,
-        };
-        console.log('Đang tìm kiếm với dữ liệu:', searchData);
-        // Tại đây bạn sẽ gọi API hoặc thực hiện logic lọc sản phẩm
+        // Sử dụng URLSearchParams để xây dựng query string một cách an toàn
+        const params = new URLSearchParams();
+
+        if (searchTerm.trim()) {
+            params.append('q', searchTerm.trim());
+        }
+        if (productType) {
+            params.append('type', productType);
+        }
+        if (priceFrom) {
+            params.append('price_from', priceFrom);
+        }
+        if (priceTo) {
+            params.append('price_to', priceTo);
+        }
+
+        const searchQuery = params.toString();
+
+        // Điều hướng đến trang kết quả với các tham số đã xây dựng
+        navigate(`/search?${searchQuery}`);
     };
 
     return (

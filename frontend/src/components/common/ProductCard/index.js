@@ -11,7 +11,7 @@ import { faEye } from '@fortawesome/free-regular-svg-icons';
 const cx = classNames.bind(styles);
 
 // Component nhận vào một prop là 'product' object
-function ProductCard({ product }) {
+function ProductCard({ product, onViewProduct }) {
     // --- LẤY HÀM addToCart TỪ CONTEXT ---
     const { addToCart } = useCart();
 
@@ -22,10 +22,12 @@ function ProductCard({ product }) {
         alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
     };
 
+    // --- HÀM NÀY GIỜ SẼ GỌI HÀM CỦA CHA ---
     const handleViewProduct = (e) => {
         e.preventDefault();
-        console.log(`Xem nhanh sản phẩm: "${product.name}"`);
-        // Thêm logic mở modal xem nhanh ở đây
+        if (onViewProduct) {
+            onViewProduct(product); // Gọi hàm của cha và truyền dữ liệu sản phẩm lên
+        }
     };
 
     return (
