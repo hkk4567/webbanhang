@@ -87,7 +87,7 @@ function Product() {
                                             className={cx('btn-link-style', 'btn-coffee')}
                                             onClick={() => handleCategoryFilter('coffee')}
                                         >
-                                            <FontAwesomeIcon icon={faAngleRight} />
+                                            <FontAwesomeIcon icon={faAngleRight} className={cx('mr-8')} />
                                             Cafe
                                         </button>
                                     </li>
@@ -97,7 +97,7 @@ function Product() {
                                             className={cx('btn-link-style', 'btn-juice')}
                                             onClick={() => handleCategoryFilter('juice')}
                                         >
-                                            <FontAwesomeIcon icon={faAngleRight} />
+                                            <FontAwesomeIcon icon={faAngleRight} className={cx('mr-8')} />
                                             Nước ép
                                         </button>
                                     </li>
@@ -107,7 +107,7 @@ function Product() {
                                             className={cx('btn-link-style', 'btn-cake')}
                                             onClick={() => handleCategoryFilter('soda')}
                                         >
-                                            <FontAwesomeIcon icon={faAngleRight} />
+                                            <FontAwesomeIcon icon={faAngleRight} className={cx('mr-8')} />
                                             Nước có ga
                                         </button>
                                     </li>
@@ -117,7 +117,7 @@ function Product() {
                                             className={cx('btn-link-style', 'btn-cocktail')}
                                             onClick={() => handleCategoryFilter('cocktail')}
                                         >
-                                            <FontAwesomeIcon icon={faAngleRight} />
+                                            <FontAwesomeIcon icon={faAngleRight} className={cx('mr-8')} />
                                             Cocktail
                                         </button>
                                     </li>
@@ -130,19 +130,19 @@ function Product() {
                                 <h3 className={cx('filter-sup-header')}>Giá sản phẩm</h3>
                                 <ul className={cx('filter-list')}>
                                     <li className={cx('filter-item')}>
-                                        <input type="checkbox" id="price-under-100" />
+                                        <input type="checkbox" id="price-under-100" className={cx('mr-8')} />
                                         <label htmlFor="price-under-100">Giá dưới 100.000đ</label>
                                     </li>
                                     <li className={cx('filter-item')}>
-                                        <input type="checkbox" id="price-100-300" />
+                                        <input type="checkbox" id="price-100-300" className={cx('mr-8')} />
                                         <label htmlFor="price-100-300">100.000đ - 300.000đ</label>
                                     </li>
                                     <li className={cx('filter-item')}>
-                                        <input type="checkbox" id="price-300-500" />
+                                        <input type="checkbox" id="price-300-500" className={cx('mr-8')} />
                                         <label htmlFor="price-300-500">300.000đ - 500.000đ</label>
                                     </li>
                                     <li className={cx('filter-item')}>
-                                        <input type="checkbox" id="price-above-500" />
+                                        <input type="checkbox" id="price-above-500" className={cx('mr-8')} />
                                         <label htmlFor="price-above-500">Giá trên 500.000đ</label>
                                     </li>
                                 </ul>
