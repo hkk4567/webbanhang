@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 
+import { useCart } from '../../../../context/CartContext';
 import { useAuth } from '../../../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import CartItem from '../../../common/CartItem';
@@ -15,22 +16,6 @@ import {
     faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 const cx = classNames.bind(styles);
-const mockCartData = [
-    {
-        id: 2,
-        name: 'Cà Phê Sữa Đá',
-        price: 29000,
-        quantity: 2,
-        image: 'https://images.unsplash.com/photo-1551030173-1a2952449856?auto=format&fit=crop&q=80&w=100',
-    },
-    {
-        id: 7,
-        name: 'Bánh Tiramisu',
-        price: 55000,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&q=80&w=100',
-    }
-];
 
 // Hàm tiện ích để định dạng tiền tệ
 const formatCurrency = (amount) => amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
@@ -48,22 +33,15 @@ function Header() {
 
     // Dữ liệu giả lập
     const { isLoggedIn, user, logout } = useAuth();
-    const [cartItems, setCartItems] = useState(mockCartData);
-
-    const cartItemCount = useMemo(() => cartItems.reduce((count, item) => count + item.quantity, 0), [cartItems]);
-    const totalPrice = useMemo(() => cartItems.reduce((total, item) => total + item.price * item.quantity, 0), [cartItems]);
+    const { cartItems, cartItemCount, totalPrice, updateQuantity, removeFromCart } = useCart();
 
     // === EVENT HANDLERS FOR CART ===
-    const handleQuantityChange = (itemId, newQuantity) => {
+    const handleCartQuantityChange = (itemId, newQuantity) => {
         if (newQuantity < 1) {
-            handleRemoveItem(itemId);
+            removeFromCart(itemId);
         } else {
-            setCartItems(cartItems.map(item => item.id === itemId ? { ...item, quantity: newQuantity } : item));
+            updateQuantity(itemId, newQuantity);
         }
-    };
-
-    const handleRemoveItem = (itemId) => {
-        setCartItems(cartItems.filter(item => item.id !== itemId));
     };
 
     // === EFFECTS ===
@@ -256,8 +234,8 @@ function Header() {
                                                     <CartItem
                                                         key={item.id}
                                                         item={item}
-                                                        onQuantityChange={handleQuantityChange}
-                                                        onRemove={handleRemoveItem}
+                                                        onQuantityChange={handleCartQuantityChange}
+                                                        onRemove={removeFromCart}
                                                     />
                                                 ))}
                                             </ul>

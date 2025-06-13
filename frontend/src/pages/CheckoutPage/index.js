@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './CheckoutPage.module.scss';
 
 // Import các hook và dữ liệu cần thiết
 import { useAuth } from '../../context/AuthContext'; // Để lấy thông tin người dùng đã đăng nhập
-// import { useCart } from '../../context/CartContext'; // Trong tương lai, bạn sẽ lấy giỏ hàng từ context
-import { mockAllProducts } from '../../data/products'; // Tạm thời dùng mock data
+import { useCart } from '../../context/CartContext';
 
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -19,16 +18,10 @@ import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 const cx = classNames.bind(styles);
 const API_BASE_URL = 'https://provinces.open-api.vn/api/';
 
-// Giả lập giỏ hàng
-const mockCart = [
-    { ...mockAllProducts[0], quantity: 2 },
-    { ...mockAllProducts[4], quantity: 1 },
-];
-
 function CheckoutPage() {
     const { user, isLoggedIn } = useAuth();
+    const { cartItems, totalPrice, clearCart } = useCart();
     const navigate = useNavigate();
-    const [cartItems] = useState(mockCart);
 
     // State cho form thông tin
     const [formData, setFormData] = useState({
@@ -53,8 +46,7 @@ function CheckoutPage() {
 
     // --- TÍNH TOÁN GIÁ ---
     const shippingFee = 40000;
-    const subtotal = useMemo(() => cartItems.reduce((total, item) => total + item.price * item.quantity, 0), [cartItems]);
-    const totalPrice = subtotal + shippingFee;
+    const finalTotalPrice = totalPrice + shippingFee;
 
     // --- LOGIC API ĐỊA CHỈ (Tương tự trang Đăng ký) ---
     useEffect(() => {
@@ -102,10 +94,19 @@ function CheckoutPage() {
     const handleSubmitOrder = (e) => {
         e.preventDefault();
         // Thêm logic validate form ở đây...
-        console.log("Đơn hàng đã sẵn sàng để gửi đi:", { ...formData, cartItems, totalPrice });
+        if (!formData.name || !formData.phone || !formData.address || !formData.ward) {
+            alert('Vui lòng điền đầy đủ thông tin nhận hàng.');
+            return;
+        }
+        console.log("Đơn hàng đã sẵn sàng để gửi đi:", { ...formData, cartItems, finalTotalPrice });
         setSummaryModalOpen(true);
     };
 
+    const handleCompleteOrder = () => {
+        alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm.');
+        clearCart(); // Xóa giỏ hàng
+        navigate('/'); // Điều hướng về trang chủ
+    };
     // Hàm định dạng tiền tệ
     const formatCurrency = (amount) => amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
@@ -113,8 +114,12 @@ function CheckoutPage() {
     useEffect(() => {
         if (!isLoggedIn) {
             navigate('/login');
+        } else if (cartItems.length === 0) {
+            // Nếu giỏ hàng trống, điều hướng về trang sản phẩm
+            alert('Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm để thanh toán.');
+            navigate('/product');
         }
-    }, [isLoggedIn, navigate]);
+    }, [isLoggedIn, cartItems, navigate]);
 
     return (
         <form onSubmit={handleSubmitOrder}>
@@ -208,7 +213,7 @@ function CheckoutPage() {
                         <div className={cx('price-summary')}>
                             <div className="d-flex justify-content-between mb-2">
                                 <span>Tạm tính</span>
-                                <span>{formatCurrency(subtotal)}</span>
+                                <span>{formatCurrency(totalPrice)}</span>
                             </div>
                             <div className="d-flex justify-content-between">
                                 <span>Phí vận chuyển</span>
@@ -217,7 +222,7 @@ function CheckoutPage() {
                         </div>
                         <div className={cx('total-price')}>
                             <span>Tổng cộng</span>
-                            <span className="fs-4 fw-bold">{formatCurrency(totalPrice)}</span>
+                            <span className="fs-4 fw-bold">{formatCurrency(finalTotalPrice)}</span>
                         </div>
                         <button type="submit" className="btn btn-primary w-100 mt-4">Đặt hàng</button>
                     </div>
@@ -233,22 +238,44 @@ function CheckoutPage() {
                             <FontAwesomeIcon icon={faCircleXmark} />
                         </button>
                         <h1>Tóm tắt đơn hàng</h1>
+
+                        {/* Thông tin người nhận */}
                         <div className={cx('order-content')}>
                             <p><strong>Khách hàng:</strong> {formData.name}</p>
                             <p><strong>Số điện thoại:</strong> {formData.phone}</p>
                             <p><strong>Địa chỉ:</strong>
-                                {`${formData.address}, ${wards.find(w => w.code === Number(formData.ward))?.name}, 
-                                    ${districts.find(d => d.code === Number(formData.district))?.name}, 
-                                    ${provinces.find(p => p.code === Number(formData.province))?.name}`}
+                                {`${formData.address}, ${wards.find(w => w.code === Number(formData.ward))?.name || ''}, 
+                                    ${districts.find(d => d.code === Number(formData.district))?.name || ''}, 
+                                    ${provinces.find(p => p.code === Number(formData.province))?.name || ''}`}
                             </p>
                             <p><strong>Phương thức thanh toán:</strong> {paymentMethod}</p>
                         </div>
+
+                        {/* --- SỬA 1: THÊM PHẦN HIỂN THỊ SẢN PHẨM --- */}
+                        <h4 className={cx('modal-section-header')}>Chi tiết sản phẩm</h4>
+                        <div className={cx('modal-product-list')}>
+                            {cartItems.map(item => (
+                                <div key={item.id} className={cx('modal-product-item')}>
+                                    <img src={item.image} alt={item.name} className={cx('modal-product-image')} />
+                                    <div className={cx('modal-product-info')}>
+                                        <div className={cx('modal-product-name')}>{item.name}</div>
+                                        <div className={cx('modal-product-quantity')}>Số lượng: {item.quantity}</div>
+                                    </div>
+                                    <div className={cx('modal-product-price')}>
+                                        {formatCurrency(item.price * item.quantity)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {/* --- KẾT THÚC PHẦN THÊM MỚI --- */}
+
+                        {/* Tổng tiền và nút xác nhận */}
                         <div className={cx('total')}>
                             <div className="d-flex justify-content-between fs-5">
                                 <span>Tổng cộng</span>
-                                <span className="fw-bold">{formatCurrency(totalPrice)}</span>
+                                <span className="fw-bold">{formatCurrency(finalTotalPrice)}</span>
                             </div>
-                            <button className="btn btn-success w-100 mt-4" onClick={() => alert('Đã xác nhận đơn hàng!')}>Xác nhận và Hoàn tất</button>
+                            <button className="btn btn-success w-100 mt-4" onClick={handleCompleteOrder}>Xác nhận và Hoàn tất</button>
                         </div>
                     </div>
                 </div>

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss'; // Giả sử file SCSS của bạn
 import CartPageItem from './components/CartPageItem';
+import { useCart } from '../../context/CartContext';
 // Import các icon cần thiết từ Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
@@ -10,45 +11,17 @@ import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 // Khởi tạo hàm cx để sử dụng CSS Modules
 const cx = classNames.bind(styles);
 
-// Dữ liệu giả để hiển thị giỏ hàng
-const initialCartItems = [
-    {
-        id: 2,
-        name: 'Cà Phê Sữa Đá',
-        price: 29000,
-        quantity: 2,
-        image: 'https://images.unsplash.com/photo-1551030173-1a2952449856?auto=format&fit=crop&q=80&w=100',
-    },
-    {
-        id: 7,
-        name: 'Bánh Tiramisu',
-        price: 55000,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&q=80&w=100',
-    }
-];
-
 function CartProduct() {
-    const [cartItems, setCartItems] = useState(initialCartItems);
+    const { cartItems, totalPrice, updateQuantity, removeFromCart } = useCart();
 
     // Hàm cập nhật số lượng
     const handleQuantityChange = (id, newQuantity) => {
-        // Đảm bảo số lượng không nhỏ hơn 1
-        if (newQuantity < 1) return;
-        setCartItems(
-            cartItems.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)),
-        );
+        if (newQuantity < 1) {
+            removeFromCart(id); // Gọi hàm xóa từ context
+        } else {
+            updateQuantity(id, newQuantity); // Gọi hàm cập nhật từ context
+        }
     };
-
-    // Hàm xóa sản phẩm
-    const handleRemoveItem = (id) => {
-        setCartItems(cartItems.filter((item) => item.id !== id));
-    };
-
-    // Tính tổng tiền giỏ hàng, chỉ tính lại khi cartItems thay đổi
-    const totalPrice = useMemo(() => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-    }, [cartItems]);
 
     return (
         <>
@@ -94,14 +67,16 @@ function CartProduct() {
                             </div>
 
                             {/* --- SỬA 3: SỬ DỤNG COMPONENT MỚI --- */}
-                            {cartItems.map((item) => (
-                                <CartPageItem
-                                    key={item.id}
-                                    item={item}
-                                    onQuantityChange={handleQuantityChange}
-                                    onRemove={handleRemoveItem}
-                                />
-                            ))}
+                            <div className={cx('cart-items-container')}>
+                                {cartItems.map((item) => (
+                                    <CartPageItem
+                                        key={item.id}
+                                        item={item}
+                                        onQuantityChange={handleQuantityChange}
+                                        onRemove={removeFromCart} // Dùng trực tiếp hàm từ context
+                                    />
+                                ))}
+                            </div>
 
                             {/* --- SỬA 4: CẬP NHẬT PHẦN FOOTER CỦA GIỎ HÀNG --- */}
                             <div className="row mt-4 justify-content-end mb-3">

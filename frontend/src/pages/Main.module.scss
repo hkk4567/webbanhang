@@ -10,6 +10,7 @@ $border-light-color: #ccc;
 $border-dark-color: #c4c4c4;
 $error-color: red;
 $dark-bg: rgba(0, 0, 0, 0.842);
+$border-color: #e0e0e0;
 
 $font-size-base: 18px;
 $font-size-large: 20px;
@@ -662,5 +663,29 @@ $font-size-xl: 24px;
 
     i {
         margin-right: 8px; // Thêm khoảng cách giữa icon và text
+    }
+}
+
+.cart-items-container {
+    max-height: 300px; // Giới hạn chiều cao để không làm cột quá dài
+    overflow-y: auto; // Thêm thanh cuộn nếu có nhiều sản phẩm
+    overflow-x: hidden; // Thêm thanh cuộn nếu có nhiều sản phẩm
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
+    padding: 1rem 0;
+    margin: 1rem 0;
+
+    // Style cho thanh cuộn (tùy chọn nhưng đẹp hơn)
+    &::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 5px;
     }
 }

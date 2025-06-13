@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './ProductCard.module.scss';
-
+import { useCart } from '../../../context/CartContext';
 // Import Font Awesome icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartPlus } from '@fortawesome/free-solid-svg-icons';
@@ -12,11 +12,14 @@ const cx = classNames.bind(styles);
 
 // Component nhận vào một prop là 'product' object
 function ProductCard({ product }) {
-    // Hàm xử lý sự kiện (sẽ được truyền từ component cha)
+    // --- LẤY HÀM addToCart TỪ CONTEXT ---
+    const { addToCart } = useCart();
+
     const handleAddToCart = (e) => {
-        e.preventDefault(); // Ngăn Link điều hướng khi chỉ muốn thêm vào giỏ
-        console.log(`Đã thêm sản phẩm "${product.name}" vào giỏ hàng.`);
-        // Thêm logic dispatch Redux hoặc gọi Context API ở đây
+        e.preventDefault();
+        // --- GỌI HÀM TỪ CONTEXT ---
+        addToCart(product);
+        alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
     };
 
     const handleViewProduct = (e) => {

@@ -241,23 +241,25 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
 
 // --- CỘT PHẢI ---
 .product-list {
-    max-height: calc(100vh - 450px); // Chiều cao động
-    overflow-y: auto;
-    padding-right: 1rem; // Tạo khoảng trống cho thanh cuộn
-    margin-right: -1rem;
+    max-height: 300px; // Giới hạn chiều cao để không làm cột quá dài
+    overflow-y: auto; // Thêm thanh cuộn nếu có nhiều sản phẩm
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
+    padding: 1rem 0;
+    margin: 1rem 0;
 
+    // Style cho thanh cuộn (tùy chọn nhưng đẹp hơn)
     &::-webkit-scrollbar {
-        width: 8px;
+        width: 5px;
     }
 
     &::-webkit-scrollbar-track {
-        background: transparent;
+        background: #f1f1f1;
     }
 
     &::-webkit-scrollbar-thumb {
         background: #ccc;
-        border-radius: 4px;
-        border: 2px solid $light-bg; // Tạo viền quanh thanh cuộn
+        border-radius: 5px;
     }
 }
 
@@ -380,8 +382,78 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
     z-index: 1050;
     box-shadow: $shadow-lg;
     animation: slideInUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-}
 
+    // ... (các style cũ của modal)
+
+    // --- SỬA 2: THÊM CÁC STYLE MỚI VÀO ĐÂY ---
+    .modal-section-header {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        padding-top: 15px;
+        border-top: 1px solid #eee; // Đường kẻ phân cách
+    }
+
+    .modal-product-list {
+        max-height: 180px; // Giới hạn chiều cao để không làm modal quá dài
+        overflow-y: auto; // Thêm thanh cuộn nếu nhiều sản phẩm
+        margin-bottom: 20px;
+
+        // Thêm một chút style cho thanh cuộn (tùy chọn)
+        &::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 5px;
+        }
+    }
+
+    .modal-product-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        font-size: 0.9rem;
+
+        &:not(:last-child) {
+            border-bottom: 1px solid #f0f0f0;
+        }
+    }
+
+    .modal-product-image {
+        width: 50px;
+        height: 50px;
+        border-radius: 5px;
+        margin-right: 15px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .modal-product-info {
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+
+    .modal-product-name {
+        font-weight: 500;
+        color: #333;
+    }
+
+    .modal-product-quantity {
+        color: #777;
+    }
+
+    .modal-product-price {
+        font-weight: 500;
+        white-space: nowrap; // Ngăn giá tiền bị xuống dòng
+    }
+}
 .summary-orders-close {
     position: absolute;
     top: 1rem;
