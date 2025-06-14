@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 /**
  * Một custom hook để quản lý logic phân trang.
@@ -11,6 +11,12 @@ export function usePagination(data, itemsPerPage) {
 
     // Tính tổng số trang, làm tròn lên
     const maxPage = Math.ceil(data.length / itemsPerPage);
+    // Hook này sẽ chạy mỗi khi dữ liệu (data) được truyền vào thay đổi.
+    useEffect(() => {
+        // Khi người dùng lọc và kết quả thay đổi, chúng ta cần đảm bảo
+        // họ luôn được đưa về trang đầu tiên của kết quả mới.
+        setCurrentPage(1);
+    }, [data]);
 
     // Sử dụng useMemo để chỉ tính toán lại dữ liệu của trang hiện tại khi cần thiết
     const currentData = useMemo(() => {

@@ -669,6 +669,10 @@ $font-size-xl: 24px;
     i {
         margin-right: 8px; // Thêm khoảng cách giữa icon và text
     }
+    &.active-category {
+        color: $primary-color; // Màu chữ của danh mục active
+        font-weight: bold; // Làm cho chữ đậm hơn
+    }
 }
 
 .cart-items-container {

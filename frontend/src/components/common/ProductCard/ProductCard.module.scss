@@ -1,7 +1,11 @@
+/*
+=====================================================
+--- BIẾN VÀ KEYFRAMES (TỪ SCSS CŨ CỦA BẠN) ---
+=====================================================
+*/
 $primary-color: #e4b95b;
 $secondary-color: #e7b35a;
 
-// --- Định nghĩa hiệu ứng trượt vào ---
 @keyframes leftIn {
     from {
         opacity: 0;
@@ -26,56 +30,126 @@ $secondary-color: #e7b35a;
     }
 }
 
-// --- Style cho Card ---
-.product-card-wrapper {
+
+/*
+=====================================================
+--- STYLES CHUNG & CHO GRID VIEW (MẶC ĐỊNH) ---
+=====================================================
+*/
+
+// Wrapper chính của card, tương đương .product-card-wrapper cũ
+.wrapper {
     text-align: center;
+    position: relative; // Cần thiết cho việc định vị giá
+    margin-top: 40px; // Giữ lại khoảng cách từ trên xuống
+
+    // Hiệu ứng hover cho toàn bộ card
+    &:hover {
+
+        // Phóng to ảnh
+        .product-image-container img {
+            transform: scale(1.05);
+        }
+
+        // Đổi màu giá
+        .product-price {
+            background-color: $primary-color;
+            color: white;
+        }
+
+        // Hiện các nút overlay với animation
+        .product-actions-overlay {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .action-icon.add-to-cart {
+            animation: rightIn 0.3s ease-in-out forwards;
+        }
+
+        .action-icon.quick-view {
+            animation: leftIn 0.3s ease-in-out forwards;
+        }
+    }
 }
 
-.product-item-box {
-    margin-top: 40px;
-    position: relative;
+// Container cho ảnh, thay thế cho .product-item-box cũ
+.product-image-container {
+    position: relative; // Cần cho overlay
+    overflow: hidden;
 
-    .link-product {
+    .product-link {
         display: block;
     }
 
     img {
         width: 100%;
-        height: 280px; // Điều chỉnh chiều cao nếu cần
+        height: 280px; // Giữ lại chiều cao cũ
         object-fit: cover;
         border: 1px solid rgba(0, 0, 0, 0.1);
         transition: transform 0.4s ease;
     }
+}
 
-    // Nút chức năng chung
-    &-cart,
-    &-view {
+// Container cho các nút overlay (chỉ dùng cho Grid View)
+.product-actions-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    // Mặc định ẩn
+    opacity: 0;
+    visibility: hidden;
+
+    .action-icon {
         position: absolute;
         bottom: 10px;
         padding: 10px 14px;
         color: white;
         background-color: $secondary-color;
         cursor: pointer;
-
-        // Mặc định ẩn đi
-        opacity: 0;
-        visibility: hidden;
         transition: all 0.3s ease-in-out;
     }
 
-    &-cart {
+    .add-to-cart {
         right: 10px;
         border-top-left-radius: 15px;
         border-bottom-right-radius: 15px;
     }
 
-    &-view {
+    .quick-view {
         left: 10px;
         border-top-right-radius: 15px;
         border-bottom-left-radius: 15px;
     }
+}
 
-    &-price {
+// Khối thông tin chung (tên & giá)
+.product-info {
+
+    // Style cho tên sản phẩm
+    .product-name {
+        margin-top: 20px;
+
+        h3,
+        a {
+            font-size: 1rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin: 0;
+            color: #333;
+            text-decoration: none;
+            transition: color 0.3s ease;
+
+            &:hover {
+                color: $primary-color;
+            }
+        }
+    }
+
+    // Style cho giá sản phẩm (định vị tuyệt đối ở Grid View)
+    .product-price {
         position: absolute;
         top: 0;
         left: 50%;
@@ -92,51 +166,117 @@ $secondary-color: #e7b35a;
             margin: 0;
         }
     }
-
-    // --- Hiệu ứng khi Hover ---
-    &:hover {
-        img {
-            transform: scale(1.05); // Phóng to ảnh một chút
-        }
-
-        .product-item-box-price {
-            background-color: $primary-color;
-            color: white;
-        }
-
-        .product-item-box-cart,
-        .product-item-box-view {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .product-item-box-cart {
-            animation: rightIn 0.3s ease-in-out forwards;
-        }
-
-        .product-item-box-view {
-            animation: leftIn 0.3s ease-in-out forwards;
-        }
-    }
 }
 
-.product-item-box-content {
-    margin-top: 20px;
+// Ẩn các phần tử chỉ dành cho List View khi ở Grid View
+.product-description,
+.product-actions-list {
+    display: none;
+}
 
-    h3 {
-        font-size: 1rem;
-        text-transform: uppercase;
-        font-weight: bold;
-        margin: 0;
+
+/*
+=====================================================
+--- GHI ĐÈ STYLE CHO LIST VIEW ---
+=====================================================
+*/
+/*
+=====================================================
+--- GHI ĐÈ STYLE CHO LIST VIEW (PHIÊN BẢN CẬP NHẬT) ---
+=====================================================
+*/
+.wrapper.list-view {
+    display: flex;
+    align-items: center; // Căn giữa các item theo chiều dọc
+    text-align: left;
+    margin-top: 0;
+    border: 1px solid #e7e7e7;
+    transition: all 0.3s ease;
+
+    &:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); // Thêm hiệu ứng đổ bóng nhẹ khi hover
     }
 
-    a {
-        color: #333;
-        text-decoration: none;
-        transition: color 0.3s ease;
+    // Ẩn overlay của grid view đi
+    .product-actions-overlay {
+        display: none;
+    }
 
-        &:hover {
+    .product-image-container {
+        flex: 0 0 200px;
+        height: 200px;
+        padding: 10px; // Thêm padding để tạo khoảng trắng xung quanh ảnh
+        background-color: #f9f9f9; // Thêm màu nền nhẹ nhàng cho vùng ảnh
+
+        // Cập nhật cho thẻ img bên trong
+        img {
+            height: 100%; // Chiếm toàn bộ chiều cao của container (sau khi trừ padding)
+            object-fit: contain; // << THAY ĐỔI QUAN TRỌNG NHẤT
+            transform: scale(1); // Reset lại hiệu ứng scale của grid view
+        }
+    }
+
+    .product-info {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+
+        .product-name {
+            margin-top: 0;
+        }
+
+        // Reset lại style của giá cho List View
+        .product-price {
+            position: static;
+            transform: none;
+            display: inline-block;
+            padding: 0;
+            border: none;
+            background-color: transparent;
             color: $primary-color;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+    }
+
+    // Hiện các phần tử dành cho List View
+    .product-description {
+        display: block;
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 15px;
+        display: -webkit-box;
+        --webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .product-actions-list {
+        display: flex;
+        gap: 15px;
+        margin-top: auto;
+
+        .btn-action {
+            padding: 10px 15px;
+            border: 1px solid $primary-color;
+            background-color: transparent;
+            color: $primary-color;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+
+            .btn-icon {
+                margin-right: 8px;
+            }
+
+            &:hover {
+                background-color: $primary-color;
+                color: #fff;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './SearchResultsPage.module.scss';
@@ -57,10 +57,6 @@ function SearchResultsPage() {
         maxPage,
         jump
     } = usePagination(searchResults, ITEMS_PER_PAGE);
-
-    useEffect(() => {
-        jump(1);
-    }, [searchResults, jump]);
     return (
         <>
             {/* Breadcrumb */}
