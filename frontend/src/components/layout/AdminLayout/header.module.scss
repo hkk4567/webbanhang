@@ -1,0 +1,231 @@
+// src/components/Layout/AdminLayout/_header.module.scss
+
+// --- Base Transition ---
+$transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); // Dùng cubic-bezier để chuyển động mượt hơn
+
+// === HEADER ===
+.admin-header {
+    height: $header-height;
+    background-color: $header-bg-color;
+    padding: 0 2rem; // Tăng padding hai bên để thoáng hơn
+    // Thêm một đường viền mỏng và đổ bóng nhẹ để tạo chiều sâu tinh tế
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1030; // Đảm bảo header luôn ở trên cùng
+}
+
+// -- Bố cục Trái & Phải --
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.header-right {
+    margin-left: auto; // Đẩy nhóm item sang phải
+}
+
+// -- Nút bật/tắt sidebar (Mobile) --
+.sidebar-toggler {
+    border: none;
+    margin-right: 0.5rem; // Tạo khoảng cách với logo
+
+    &:focus {
+        box-shadow: none;
+    }
+
+    .navbar-toggler-icon {
+        // SVG icon với màu tùy chỉnh để nổi bật trên nền đậm
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='#{$header-text-color}' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+}
+
+// -- Logo --
+.logo-wrapper {
+    // Đổi tên class để rõ nghĩa hơn
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: $transition-base;
+
+    &:hover .brand-logo-circle {
+        transform: scale(1.05); // Hiệu ứng phóng to nhẹ khi hover
+        box-shadow: 0 0 15px rgba($logo-bg-color, 0.7);
+    }
+}
+
+.brand-logo-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 48px; // Giảm nhẹ kích thước cho vừa vặn hơn
+    height: 48px;
+    background-color: $logo-bg-color;
+    border-radius: 50%;
+    color: $logo-text-color;
+    flex-shrink: 0;
+    transition: $transition-base;
+}
+
+.logo-icon {
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.logo-text-inner {
+    font-size: 0.7rem;
+    font-weight: 700; // Tăng độ đậm cho dễ đọc
+    text-transform: uppercase; // Thống nhất viết hoa
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+.brand-text {
+    margin-left: 16px;
+    font-size: 1.15rem; // Giảm nhẹ size để hài hòa với logo
+    font-weight: 600; // Giảm độ đậm để logo tròn nổi bật hơn
+    color: #e2e8f0; // Dùng màu trắng xám nhẹ thay vì trắng tinh
+    letter-spacing: 0.5px;
+}
+
+// -- Các nút hành động (Thông báo, User) --
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem; // Tăng khoảng cách (gap) để các icon 'dễ thở' hơn
+    .dropdown {
+        position: relative;
+    }
+    .action-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        color: #cbd5e1; // Màu icon mặc định xám nhạt
+        background-color: transparent;
+        transition: $transition-base;
+        position: relative;
+        font-size: 1.25rem;
+        text-decoration: none;
+
+        &:hover,
+        &:focus {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff; // Chuyển icon sang màu trắng sáng khi hover
+            transform: translateY(-2px); // Hiệu ứng nhấc lên nhẹ
+        }
+    }
+
+    .user-profile {
+        font-size: 1.75rem; // Tinh chỉnh lại kích thước user icon
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        line-height: 1;
+        padding: 0.25em 0.5em;
+        // Thêm viền trắng nhỏ để tách biệt khỏi icon chuông, trông chuyên nghiệp hơn
+        border: 2px solid $header-bg-color;
+    }
+}
+
+// -- User Dropdown Menu --
+.user-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem); // Đặt vị trí ngay dưới thẻ cha, cộng thêm 0.5rem khoảng cách
+    right: 0; // Căn lề phải với thẻ cha
+    z-index: 1000; // Đảm bảo nó nổi lên trên các thành phần khác
+    
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+    min-width: 260px;
+    padding: 0.75rem;
+    margin-top: 0.5rem !important; // Giảm margin-top và có thể giữ !important nếu cần để ghi đè Bootstrap
+    background-color: #ffffff;
+
+    // --- HIỆU ỨNG MƯỢT MÀ ---
+    display: block; // Luôn là block để transition hoạt động
+    opacity: 0; // Mặc định là trong suốt
+    visibility: hidden; // Mặc định là ẩn
+    transform: translateY(10px); // Hơi dịch xuống dưới
+    transition: all 0.2s ease-out; // Hiệu ứng chuyển động
+
+    // Khi có class .show (được thêm bởi React)
+    &.show {
+        opacity: 1; // Hiện ra
+        visibility: visible; // Cho phép tương tác
+        transform: translateY(0); // Trở về vị trí ban đầu
+    }
+
+    // --- KẾT THÚC HIỆU ỨNG ---
+
+    .dropdown-header {
+        padding: 0.5rem 0.75rem 1rem;
+
+        h6 {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        span {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+    }
+
+    .dropdown-divider {
+        margin: 0.5rem 0;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem 0.75rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        border-radius: 8px;
+        color: #334155;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease; // Tách transition để tối ưu
+        text-decoration: none;
+
+        svg {
+            width: 32px;
+            font-size: 1.1rem;
+            color: #94a3b8;
+            transition: color 0.2s ease;
+            margin-right: 0.25rem;
+        }
+
+        &:hover,
+        &:focus,
+        &:active {
+            background-color: rgba($dropdown-accent-color, 0.08);
+            color: $dropdown-accent-color;
+            transform: translateX(4px);
+
+            svg {
+                color: $dropdown-accent-color;
+            }
+        }
+    }
+
+    .dropdown-item-logout:hover {
+        background-color: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+
+        svg {
+            color: #ef4444;
+        }
+    }
+}

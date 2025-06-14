@@ -3,20 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './CheckoutPage.module.scss';
 
-// Import các hook và dữ liệu cần thiết
-import { useAuth } from '../../../context/AuthContext'; // Để lấy thông tin người dùng đã đăng nhập
+// Import các hook và component
+import { useAuth } from '../../../context/AuthContext';
 import { useCart } from '../../../context/CartContext';
+import AddressSelector from '../../../components/common/AddressSelector'; // <-- THAY ĐỔI 1: Import component mới
 
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// Dòng code mới đã được sửa
 import { faCircleDot, faCircleXmark } from '@fortawesome/free-regular-svg-icons';
 import { faCcVisa } from '@fortawesome/free-brands-svg-icons';
-// Import faMoneyBill từ gói SOLID
-import { faMoneyBill } from '@fortawesome/free-solid-svg-icons';
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { faMoneyBill, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+
 const cx = classNames.bind(styles);
-const API_BASE_URL = 'https://provinces.open-api.vn/api/';
 
 function CheckoutPage() {
     const { user, isLoggedIn } = useAuth();
@@ -29,71 +27,40 @@ function CheckoutPage() {
         name: user?.name || '',
         phone: '',
         address: '',
-        province: '',
+        // <-- THAY ĐỔI 2: Lưu tên tỉnh/huyện/xã thay vì code
+        city: '',
         district: '',
         ward: '',
         note: ''
     });
-
-    // State cho các dropdown địa chỉ
-    const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
-
     // State cho logic khác
-    const [paymentMethod, setPaymentMethod] = useState('COD'); // 'COD' hoặc 'BANK'
+    const [paymentMethod, setPaymentMethod] = useState('COD');
     const [isSummaryModalOpen, setSummaryModalOpen] = useState(false);
 
     // --- TÍNH TOÁN GIÁ ---
     const shippingFee = 40000;
     const finalTotalPrice = totalPrice + shippingFee;
 
-    // --- LOGIC API ĐỊA CHỈ (Tương tự trang Đăng ký) ---
-    useEffect(() => {
-        const fetchProvinces = async () => {
-            const response = await fetch(API_BASE_URL);
-            const data = await response.json();
-            setProvinces(data);
-        };
-        fetchProvinces();
-    }, []);
-
-    useEffect(() => {
-        if (formData.province) {
-            const fetchDistricts = async () => {
-                const response = await fetch(`${API_BASE_URL}p/${formData.province}?depth=2`);
-                const data = await response.json();
-                setDistricts(data.districts);
-                setWards([]);
-            };
-            fetchDistricts();
-        }
-    }, [formData.province]);
-
-    useEffect(() => {
-        if (formData.district) {
-            const fetchWards = async () => {
-                const response = await fetch(`${API_BASE_URL}d/${formData.district}?depth=2`);
-                const data = await response.json();
-                setWards(data.wards);
-            };
-            fetchWards();
-        }
-    }, [formData.district]);
-
-
     // --- HÀM XỬ LÝ ---
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Reset dropdown phụ thuộc
-        if (name === 'province') setFormData(prev => ({ ...prev, district: '', ward: '' }));
-        if (name === 'district') setFormData(prev => ({ ...prev, ward: '' }));
+    };
+
+    // <-- THAY ĐỔI 3: Hàm nhận dữ liệu từ AddressSelector
+    const handleAddressChange = (addressData) => {
+        // addressData là object { city: 'Tên TP', district: 'Tên QH', ward: 'Tên PX' }
+        setFormData(prev => ({
+            ...prev,
+            city: addressData.city,
+            district: addressData.district,
+            ward: addressData.ward,
+        }));
     };
 
     const handleSubmitOrder = (e) => {
         e.preventDefault();
-        // Thêm logic validate form ở đây...
+        // Validation vẫn giữ nguyên
         if (!formData.name || !formData.phone || !formData.address || !formData.ward) {
             alert('Vui lòng điền đầy đủ thông tin nhận hàng.');
             return;
@@ -104,18 +71,16 @@ function CheckoutPage() {
 
     const handleCompleteOrder = () => {
         alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm.');
-        clearCart(); // Xóa giỏ hàng
-        navigate('/'); // Điều hướng về trang chủ
+        clearCart();
+        navigate('/');
     };
-    // Hàm định dạng tiền tệ
+
     const formatCurrency = (amount) => amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
-    // Nếu chưa đăng nhập, điều hướng về trang login
     useEffect(() => {
         if (!isLoggedIn) {
             navigate('/login');
         } else if (cartItems.length === 0) {
-            // Nếu giỏ hàng trống, điều hướng về trang sản phẩm
             alert('Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm để thanh toán.');
             navigate('/product');
         }
@@ -135,32 +100,25 @@ function CheckoutPage() {
                         </div>
 
                         <div className="row mt-4">
-                            {/* Thông tin nhận hàng */}
+                            {/* CỘT TRÁI: Thông tin nhận hàng */}
                             <div className="col-md-6">
                                 <h3 className={cx('section-header')}>Thông tin nhận hàng</h3>
                                 <div className={cx('fieldset')}>
                                     <input type="email" name="email" className="form-control mb-2" placeholder="Email" value={formData.email} onChange={handleChange} required />
                                     <input type="text" name="name" className="form-control mb-2" placeholder="Họ và tên" value={formData.name} onChange={handleChange} required />
                                     <input type="tel" name="phone" className="form-control mb-2" placeholder="Số điện thoại" onChange={handleChange} required />
-                                    <input type="text" name="address" className="form-control mb-2" placeholder="Địa chỉ (số nhà, tên đường)" onChange={handleChange} required />
-                                    <select name="province" className="form-select mb-2" value={formData.province} onChange={handleChange} required>
-                                        <option value="">Chọn Tỉnh/Thành phố</option>
-                                        {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
-                                    </select>
-                                    <select name="district" className="form-select mb-2" value={formData.district} onChange={handleChange} required disabled={!formData.province}>
-                                        <option value="">Chọn Quận/Huyện</option>
-                                        {districts.map(d => <option key={d.code} value={d.code}>{d.name}</option>)}
-                                    </select>
-                                    <select name="ward" className="form-select mb-2" value={formData.ward} onChange={handleChange} required disabled={!formData.district}>
-                                        <option value="">Chọn Phường/Xã</option>
-                                        {wards.map(w => <option key={w.code} value={w.code}>{w.name}</option>)}
-                                    </select>
-                                    <textarea name="note" className="form-control" placeholder="Ghi chú (tùy chọn)" rows="3" onChange={handleChange}></textarea>
+                                    <input type="text" name="address" className="form-control mb-3" placeholder="Địa chỉ (số nhà, tên đường)" onChange={handleChange} required />
+
+                                    {/* Component chọn địa chỉ */}
+                                    <AddressSelector onChange={handleAddressChange} layout="vertical" />
+
+                                    <textarea name="note" className="form-control mt-3" placeholder="Ghi chú (tùy chọn)" rows="3" onChange={handleChange}></textarea>
                                 </div>
                             </div>
 
-                            {/* Vận chuyển và Thanh toán */}
+                            {/* CỘT PHẢI: Vận chuyển và Thanh toán */}
                             <div className="col-md-6">
+                                {/* Phần Vận chuyển */}
                                 <h3 className={cx('section-header')}>Vận chuyển</h3>
                                 <div className={cx('option-box')}>
                                     <div className="d-flex justify-content-between">
@@ -168,22 +126,23 @@ function CheckoutPage() {
                                         <strong>{formatCurrency(shippingFee)}</strong>
                                     </div>
                                 </div>
+
+                                {/* Phần Thanh toán */}
                                 <h3 className={cx('section-header', 'mt-4')}>Thanh toán</h3>
                                 <div className={cx('option-box', 'payment-option', { active: paymentMethod === 'COD' })} onClick={() => setPaymentMethod('COD')}>
-                                    <div className="d-flex justify-content-between">
-                                        <span><input type="radio" name="payment" checked={paymentMethod === 'COD'} readOnly /> Thanh toán khi giao hàng (COD)</span>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span><input type="radio" name="payment" checked={paymentMethod === 'COD'} readOnly className="me-2" />Thanh toán khi giao hàng (COD)</span>
                                         <FontAwesomeIcon icon={faMoneyBill} />
                                     </div>
                                 </div>
                                 <div className={cx('option-box', 'payment-option', { active: paymentMethod === 'BANK' })} onClick={() => setPaymentMethod('BANK')}>
-                                    <div className="d-flex justify-content-between">
-                                        <span><input type="radio" name="payment" checked={paymentMethod === 'BANK'} readOnly /> Thanh toán bằng thẻ ngân hàng</span>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span><input type="radio" name="payment" checked={paymentMethod === 'BANK'} readOnly className="me-2" />Thanh toán bằng thẻ ngân hàng</span>
                                         <FontAwesomeIcon icon={faCcVisa} />
                                     </div>
                                     {paymentMethod === 'BANK' && (
                                         <div className={cx('bank-form', 'mt-3 pt-3 border-top')}>
                                             <p className="small text-muted">Chức năng đang được phát triển. Vui lòng chọn COD.</p>
-                                            {/* Thêm form nhập thẻ ở đây nếu cần */}
                                         </div>
                                     )}
                                 </div>
@@ -191,8 +150,9 @@ function CheckoutPage() {
                         </div>
                     </div>
 
-                    {/* --- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG --- */}
+                    {/* --- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG (Không thay đổi) --- */}
                     <div className={cx('right-column', 'col-lg-5', 'p-5')}>
+                        {/* ... nội dung cột phải giữ nguyên ... */}
                         <h3 className={cx('section-header')}>Đơn hàng ({cartItems.length} sản phẩm)</h3>
                         <div className={cx('product-list')}>
                             {cartItems.map(item => (
@@ -243,15 +203,12 @@ function CheckoutPage() {
                         <div className={cx('order-content')}>
                             <p><strong>Khách hàng:</strong> {formData.name}</p>
                             <p><strong>Số điện thoại:</strong> {formData.phone}</p>
-                            <p><strong>Địa chỉ:</strong>
-                                {`${formData.address}, ${wards.find(w => w.code === Number(formData.ward))?.name || ''}, 
-                                    ${districts.find(d => d.code === Number(formData.district))?.name || ''}, 
-                                    ${provinces.find(p => p.code === Number(formData.province))?.name || ''}`}
-                            </p>
+                            {/* <-- THAY ĐỔI 5: Hiển thị địa chỉ từ formData trực tiếp */}
+                            <p><strong>Địa chỉ:</strong> {`${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`}</p>
                             <p><strong>Phương thức thanh toán:</strong> {paymentMethod}</p>
                         </div>
 
-                        {/* --- SỬA 1: THÊM PHẦN HIỂN THỊ SẢN PHẨM --- */}
+                        {/* Chi tiết sản phẩm */}
                         <h4 className={cx('modal-section-header')}>Chi tiết sản phẩm</h4>
                         <div className={cx('modal-product-list')}>
                             {cartItems.map(item => (
@@ -267,7 +224,6 @@ function CheckoutPage() {
                                 </div>
                             ))}
                         </div>
-                        {/* --- KẾT THÚC PHẦN THÊM MỚI --- */}
 
                         {/* Tổng tiền và nút xác nhận */}
                         <div className={cx('total')}>

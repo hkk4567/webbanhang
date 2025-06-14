@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './RegisterPage.module.scss';
+import AddressSelector from '../../../components/common/AddressSelector';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 
-// --- API BASE URL ---
-const API_BASE_URL = 'https://provinces.open-api.vn/api/';
-
 function RegisterPage() {
-    // --- STATE MANAGEMENT ---
-    // State duy nhất để quản lý tất cả dữ liệu của form
+    // State giờ đây chỉ cần quản lý dữ liệu của form
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
@@ -26,102 +23,27 @@ function RegisterPage() {
         confirmPassword: '',
     });
 
-    // State để quản lý lỗi validation
     const [errors, setErrors] = useState({});
 
-    // State để lưu trữ danh sách lấy từ API
-    const [provinces, setProvinces] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
-
-    // State để quản lý trạng thái tải dữ liệu (cải thiện UX)
-    const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
-    const [isLoadingWards, setIsLoadingWards] = useState(false);
-
-
-    // --- API CALLS & SIDE EFFECTS ---
-    // 1. Lấy danh sách Tỉnh/Thành phố khi component được render lần đầu
-    useEffect(() => {
-        const fetchProvinces = async () => {
-            try {
-                const response = await fetch(API_BASE_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                setProvinces(data);
-            } catch (error) {
-                console.error('Failed to fetch provinces:', error);
-            }
-        };
-        fetchProvinces();
-    }, []); // Mảng rỗng `[]` đảm bảo useEffect này chỉ chạy một lần
-
-    // 2. Lấy danh sách Quận/Huyện khi Tỉnh/Thành phố thay đổi
-    useEffect(() => {
-        if (formData.province) {
-            const fetchDistricts = async () => {
-                setIsLoadingDistricts(true);
-                try {
-                    const response = await fetch(`${API_BASE_URL}p/${formData.province}?depth=2`);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const data = await response.json();
-                    setDistricts(data.districts);
-                } catch (error) {
-                    console.error('Failed to fetch districts:', error);
-                } finally {
-                    setIsLoadingDistricts(false);
-                }
-            };
-            fetchDistricts();
-        } else {
-            // Nếu không có tỉnh nào được chọn, reset danh sách huyện và xã
-            setDistricts([]);
-            setWards([]);
-        }
-    }, [formData.province]); // Chạy lại mỗi khi giá trị `formData.province` thay đổi
-
-    // 3. Lấy danh sách Phường/Xã khi Quận/Huyện thay đổi
-    useEffect(() => {
-        if (formData.district) {
-            const fetchWards = async () => {
-                setIsLoadingWards(true);
-                try {
-                    const response = await fetch(`${API_BASE_URL}d/${formData.district}?depth=2`);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const data = await response.json();
-                    setWards(data.wards);
-                } catch (error) {
-                    console.error('Failed to fetch wards:', error);
-                } finally {
-                    setIsLoadingWards(false);
-                }
-            };
-            fetchWards();
-        } else {
-            // Nếu không có quận/huyện nào được chọn, reset danh sách xã
-            setWards([]);
-        }
-    }, [formData.district]); // Chạy lại mỗi khi giá trị `formData.district` thay đổi
-
-
     // --- EVENT HANDLERS ---
-    // Hàm xử lý chung cho việc thay đổi giá trị của các input và select
+    // Hàm xử lý chung cho các input text
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => {
-            const newState = { ...prev, [name]: value };
-            // Reset các dropdown phụ thuộc khi dropdown cha thay đổi
-            if (name === 'province') {
-                newState.district = '';
-                newState.ward = '';
-            }
-            if (name === 'district') {
-                newState.ward = '';
-            }
-            return newState;
-        });
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Hàm kiểm tra lỗi của form trước khi gửi
+    // --- SỬA 4: HÀM CALLBACK ĐỂ NHẬN DỮ LIỆU TỪ AddressSelector ---
+    const handleAddressChange = (addressData) => {
+        setFormData(prev => ({
+            ...prev,
+            province: addressData.city,
+            district: addressData.district,
+            ward: addressData.ward,
+        }));
+    };
+
+
+    // Hàm validate (giữ nguyên)
     const validateForm = () => {
         let newErrors = {};
         if (!formData.name) newErrors.name = 'Vui lòng nhập họ và tên.';
@@ -136,29 +58,18 @@ function RegisterPage() {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Hàm xử lý khi người dùng nhấn nút Đăng ký
+    // Hàm submit (giữ nguyên, nhưng không cần tìm tên nữa nếu bạn quyết định lưu code)
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateForm()) {
-            // Lấy tên thay vì code để hiển thị
-            const provinceName = provinces.find(p => p.code === Number(formData.province))?.name || '';
-            const districtName = districts.find(d => d.code === Number(formData.district))?.name || '';
-            const wardName = wards.find(w => w.code === Number(formData.ward))?.name || '';
-
-            const finalData = {
-                ...formData,
-                province: provinceName,
-                district: districtName,
-                ward: wardName,
-            }
-
-            console.log('Form hợp lệ, gửi dữ liệu:', finalData);
+            // Không cần phải chuyển đổi gì nữa, formData đã chứa đúng tên
+            console.log('Form hợp lệ, gửi dữ liệu:', formData);
             alert('Đăng ký thành công!');
-            // Tại đây bạn sẽ gọi API để gửi dữ liệu lên server
         } else {
             console.log('Form có lỗi, vui lòng kiểm tra lại.');
         }
     };
+
 
     return (
         <>
@@ -206,28 +117,8 @@ function RegisterPage() {
                                             <label htmlFor="address" className="form-label">Địa chỉ (Số nhà, tên đường):</label>
                                             <input type="text" id="address" name="address" placeholder="VD: 123 Đường ABC" className="form-control" onChange={handleChange} required />
                                         </div>
-                                        <div className="col-md-4 mb-3">
-                                            <label htmlFor="province" className="form-label">Tỉnh/Thành phố:</label>
-                                            <select id="province" name="province" className="form-select" onChange={handleChange} value={formData.province} required>
-                                                <option value="">--Chọn tỉnh/thành phố--</option>
-                                                {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-4 mb-3">
-                                            <label htmlFor="district" className="form-label">Quận/Huyện:</label>
-                                            <select id="district" name="district" className="form-select" onChange={handleChange} value={formData.district} disabled={!formData.province || isLoadingDistricts} required>
-                                                <option value="">--Chọn quận/huyện--</option>
-                                                {isLoadingDistricts && <option>Đang tải...</option>}
-                                                {districts.map(d => <option key={d.code} value={d.code}>{d.name}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-4 mb-3">
-                                            <label htmlFor="ward" className="form-label">Phường/Xã:</label>
-                                            <select id="ward" name="ward" className="form-select" onChange={handleChange} value={formData.ward} disabled={!formData.district || isLoadingWards} required>
-                                                <option value="">--Chọn phường/xã--</option>
-                                                {isLoadingWards && <option>Đang tải...</option>}
-                                                {wards.map(w => <option key={w.code} value={w.code}>{w.name}</option>)}
-                                            </select>
+                                        <div className="col-12">
+                                            <AddressSelector onChange={handleAddressChange} />
                                         </div>
                                         <div className="col-md-6 mb-3">
                                             <label htmlFor="password" className="form-label">Mật khẩu:</label>

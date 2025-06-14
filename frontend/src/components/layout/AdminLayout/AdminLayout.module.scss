@@ -1,0 +1,36 @@
+// src/components/Layout/AdminLayout/AdminLayout.module.scss
+
+// 1. Import các biến số trước tiên để các file khác có thể sử dụng
+@import 'variables';
+
+// 2. Import các file SCSS thành phần
+@import 'header.module';
+@import 'sidebar.module';
+
+// 3. Định nghĩa các style layout chung nhất
+.admin-layout {
+    background-color: $admin-bg-color;
+    min-height: 100vh;
+}
+
+.main-content {
+    padding-top: $header-height;
+    padding-left: 0;
+    padding-right: 0;
+    transition: margin-left 0.3s ease-in-out;
+    overflow: hidden;
+    @media (min-width: 992px) {
+        margin-left: calc($sidebar-width + 10px);
+        margin-top: 10px;
+        // Áp dụng padding cho nội dung bên trong để thoáng hơn
+        >div {
+            padding: 24px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        >div {
+            padding: 16px;
+        }
+    }
+}
