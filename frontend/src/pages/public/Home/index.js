@@ -5,22 +5,22 @@ import styles from './Home.module.scss';
 
 // --- 1. IMPORT HÌNH ẢNH ---
 // (Hãy chắc chắn đường dẫn này đúng)
-import slider1 from '../../assets/img/slider_1.webp';
-import slider2 from '../../assets/img/slider_2.webp';
-import moduleBanner1 from '../../assets/img/module_banner1.webp';
-import moduleBanner2 from '../../assets/img/module_banner2.webp';
-import moduleBanner3 from '../../assets/img/module_banner3.webp';
-import bgSection from '../../assets/img/bg-section.webp';
-import product1 from '../../assets/img/product1 (1).webp';
-import product2 from '../../assets/img/product2-10b0f2e1-6277-49c7-95ba-ceaac7f11091.webp';
-import product3 from '../../assets/img/product3.webp';
-import product4 from '../../assets/img/product4.webp';
-import product5 from '../../assets/img/product5.webp';
-import product6 from '../../assets/img/product6.webp';
-import iconCf from '../../assets/img/icon-cf.webp';
-import quyTrinh1 from '../../assets/img/sec_quy_trinh_images1.webp';
-import quyTrinh2 from '../../assets/img/sec_quy_trinh_images2.webp';
-import quyTrinh3 from '../../assets/img/sec_quy_trinh_images3.webp';
+import slider1 from '../../../assets/img/slider_1.webp';
+import slider2 from '../../../assets/img/slider_2.webp';
+import moduleBanner1 from '../../../assets/img/module_banner1.webp';
+import moduleBanner2 from '../../../assets/img/module_banner2.webp';
+import moduleBanner3 from '../../../assets/img/module_banner3.webp';
+import bgSection from '../../../assets/img/bg-section.webp';
+import product1 from '../../../assets/img/product1 (1).webp';
+import product2 from '../../../assets/img/product2-10b0f2e1-6277-49c7-95ba-ceaac7f11091.webp';
+import product3 from '../../../assets/img/product3.webp';
+import product4 from '../../../assets/img/product4.webp';
+import product5 from '../../../assets/img/product5.webp';
+import product6 from '../../../assets/img/product6.webp';
+import iconCf from '../../../assets/img/icon-cf.webp';
+import quyTrinh1 from '../../../assets/img/sec_quy_trinh_images1.webp';
+import quyTrinh2 from '../../../assets/img/sec_quy_trinh_images2.webp';
+import quyTrinh3 from '../../../assets/img/sec_quy_trinh_images3.webp';
 
 const cx = classNames.bind(styles);
 

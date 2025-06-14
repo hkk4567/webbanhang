@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './LoginPage.module.scss';
 //sử lý login
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';

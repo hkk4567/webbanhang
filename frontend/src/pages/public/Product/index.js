@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'; // Import Link để điều hướng
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss';
 // --- IMPORT CÁC THÀNH PHẦN CẦN THIẾT ---
-import ProductCard from '../../components/common/ProductCard'; // Import component
-import ProductQuickViewModal from '../../components/common/ProductQuickViewModal';
-import Pagination from '../../components/common/Pagination';
-import { mockAllProducts } from '../../data/products'; // Import dữ liệu giả
-import { usePagination } from '../../hooks/usePagination';
+import ProductCard from '../../../components/common/ProductCard'; // Import component
+import ProductQuickViewModal from '../../../components/common/ProductQuickViewModal';
+import Pagination from '../../../components/common/Pagination';
+import { mockAllProducts } from '../../../data/products'; // Import dữ liệu giả
+import { usePagination } from '../../../hooks/usePagination';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {

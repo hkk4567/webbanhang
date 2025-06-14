@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss'; // Giả sử file SCSS của bạn
 import CartPageItem from './components/CartPageItem';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../../context/CartContext';
 // Import các icon cần thiết từ Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';

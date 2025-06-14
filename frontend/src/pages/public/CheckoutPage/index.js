@@ -4,8 +4,8 @@ import classNames from 'classnames/bind';
 import styles from './CheckoutPage.module.scss';
 
 // Import các hook và dữ liệu cần thiết
-import { useAuth } from '../../context/AuthContext'; // Để lấy thông tin người dùng đã đăng nhập
-import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../../context/AuthContext'; // Để lấy thông tin người dùng đã đăng nhập
+import { useCart } from '../../../context/CartContext';
 
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

@@ -4,8 +4,8 @@ import classNames from 'classnames/bind';
 import styles from './ProductDetailPage.module.scss';
 
 // --- SỬA 2: IMPORT useCart ĐỂ TRUY CẬP GIỎ HÀNG ---
-import { useCart } from '../../context/CartContext';
-import { mockAllProducts } from '../../data/products';
+import { useCart } from '../../../context/CartContext';
+import { mockAllProducts } from '../../../data/products';
 
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

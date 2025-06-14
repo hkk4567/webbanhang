@@ -8,11 +8,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 
 // Dữ liệu giả - Trong thực tế, bạn sẽ lấy từ API
-import { usePagination } from '../../hooks/usePagination';
-import Pagination from '../../components/common/Pagination';
-import ProductCard from '../../components/common/ProductCard'; // Import component
-import ProductQuickViewModal from '../../components/common/ProductQuickViewModal';
-import { mockAllProducts } from '../../data/products'; // Giả sử bạn có file này
+import { usePagination } from '../../../hooks/usePagination';
+import Pagination from '../../../components/common/Pagination';
+import ProductCard from '../../../components/common/ProductCard'; // Import component
+import ProductQuickViewModal from '../../../components/common/ProductQuickViewModal';
+import { mockAllProducts } from '../../../data/products'; // Giả sử bạn có file này
 const cx = classNames.bind(styles);
 const ITEMS_PER_PAGE = 12;
 function SearchResultsPage() {
