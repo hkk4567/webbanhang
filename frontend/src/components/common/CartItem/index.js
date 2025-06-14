@@ -44,7 +44,7 @@ function CartItem({ item, onQuantityChange, onRemove }) {
 
             {/* Thông tin sản phẩm */}
             <div className={cx('item-content')}>
-                <Link to={`/product/${item.slug}`} className={cx('item-name')}>
+                <Link to={`/product/${item.id}`} className={cx('item-name')}>
                     {item.name}
                 </Link>
 
