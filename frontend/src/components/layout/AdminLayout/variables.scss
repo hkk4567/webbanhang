@@ -1,25 +1,28 @@
-// src/components/Layout/AdminLayout/_variables.scss
-
-// === BIẾN MÀU VÀ FONT ===
-$header-height: 60px;
+// === BIẾN KÍCH THƯỚC ===
+$header-height: 70px;
 $sidebar-width: 250px;
 
-$header-bg-color: #ffffff;
-$header-border-color: #e9ecef;
-$header-text-color: #495057;
+// === BIẾN MÀU SẮC & THEME ===
+// Màu nền chung của trang admin
+$admin-bg-color: #f4f7fa;
 
+// Header
+$header-bg-color: #2c1e12;
+$header-text-color: #e0d7cf;
+$header-text-hover-color: #ffffff;
+
+// Sidebar
 $sidebar-bg-color: #2c1e12;
 $sidebar-text-color: #adb5bd;
 $sidebar-text-hover-color: #ffffff;
 
-$accent-color: #e4b95b;
-$admin-bg-color: #f4f7fa;
+// Logo
+$logo-bg-color: #895d3a;
+$logo-text-color: #ffffff;
 
-$header-height: 70px;
-$header-bg-color: #2c1e12; // MÀU NỀN MỚI: Nâu-đen ấm, sang trọng
-$header-text-color: #e0d7cf; // Màu chữ kem/be, giữ nguyên vì tương phản tốt
-$header-text-hover-color: #ffffff; // Màu chữ trắng sáng khi hover, giữ nguyên
-$dropdown-accent-color: #e89f5d; // MÀU NHẤN MỚI: Cam-vàng đất để nổi bật hơn
-$header-border-color: #e9ecef; // Giữ lại cho dropdown
-$logo-bg-color: #895d3a; // Màu nền nâu-be cho logo tròn
-$logo-text-color: #ffffff; // Màu cho icon và chữ bên trong logo
+// Màu nhấn (accent)
+$accent-color: #e89f5d;
+$dropdown-accent-color: #e89f5d;
+
+// Transition
+$transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);

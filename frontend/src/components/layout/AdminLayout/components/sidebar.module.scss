@@ -1,0 +1,165 @@
+/* src/components/Layout/AdminLayout/_sidebar.module.scss (PHIÊN BẢN HOÀN CHỈNH) */
+
+/* ==========================================================================
+   BIẾN (VARIABLES)
+   ========================================================================== */
+$sidebar-bg-color: #212529;
+$sidebar-text-color: #adb5bd;
+$sidebar-text-hover-color: #ffffff;
+
+$accent-color: #e89f5d;
+$sidebar-width: 280px;
+$sidebar-submenu-bg: darken($sidebar-bg-color, 3%);
+$sidebar-item-hover-bg: rgba(255, 255, 255, 0.05);
+$sidebar-item-active-bg: rgba(255, 255, 255, 0.1);
+/* ==========================================================================
+      CẤU TRÚC CHÍNH (SỬ DỤNG LỒNG NHAU ĐỂ TĂNG ĐỘ ƯU TIÊN)
+      ========================================================================== */
+
+// 🔥 Container chính. Tất cả các style khác sẽ được lồng trong đây.
+.submenu-toggle {
+    background: none;
+}
+.sidebar-nav {
+    background-color: $sidebar-bg-color !important;
+    width: $sidebar-width;
+    border-right: none !important;
+
+    // Header của Sidebar
+    .sidebar-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+
+        .sidebar-title {
+            color: $sidebar-text-hover-color;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+    }
+
+    // Tiêu đề các mục (CORE, QUẢN LÝ)
+    .sidebar-section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: rgba($sidebar-text-color, 0.6);
+        text-transform: uppercase;
+        padding: 1rem 1.5rem 0.5rem;
+        letter-spacing: 0.5px;
+    }
+
+    // 🔥 Style cơ bản cho tất cả các link/button trong menu
+    // Selector kết quả: .sidebar-nav .nav-link
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem 1.5rem;
+        color: $sidebar-text-color;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        position: relative;
+        width: 100%;
+        border: none;
+        background: none;
+
+        .icon-wrapper {
+            width: 35px;
+            display: inline-block;
+            font-size: 1rem;
+            margin-right: 0.75rem;
+            text-align: center;
+            color: #8895a7;
+            transition: color 0.2s ease-in-out;
+        }
+
+        &:hover {
+            color: $sidebar-text-hover-color;
+            background-color: rgba(255, 255, 255, 0.05);
+
+            .icon-wrapper {
+                color: $sidebar-text-hover-color;
+            }
+        }
+
+        // 🔥 Trạng thái active đã được tăng độ ưu tiên
+        // Selector kết quả: .sidebar-nav .nav-link.active
+        &.active {
+            color: $sidebar-text-hover-color;
+            background-color: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+
+            // Thanh màu nhấn bên trái
+            &::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 4px;
+                background-color: $accent-color;
+            }
+
+            .icon-wrapper {
+                color: $accent-color;
+            }
+        }
+    }
+
+    // Nút đăng xuất
+    .logout-btn {
+        text-align: left;
+    }
+
+    // 🔥 TÙY CHỈNH CHO COMPONENT ACCORDION
+    .sidebar-accordion {
+        .accordion-item {
+            background-color: transparent;
+            border: none;
+        }
+
+        // Nhắm trực tiếp vào class `.accordion-button` của Bootstrap
+        .submenu-toggle {
+            :global {
+                .accordion-button {
+                    background-color: transparent !important;
+                    color: $sidebar-text-color !important;
+                }
+            }
+        }
+
+        // Nhắm vào class `.accordion-body` của Bootstrap
+        .accordion-body {
+            padding: 0;
+            background-color: $sidebar-submenu-bg;
+
+            // Áp dụng style cho các link con bên trong.
+            // .nav-link ở đây đã được lồng trong nhiều lớp, nên nó sẽ rất mạnh mẽ.
+            .nav-link {
+                padding-left: calc(1.5rem + 35px + 0.75rem); // Thụt vào đẹp mắt
+                font-size: 0.9rem;
+
+                .icon-wrapper {
+                    font-size: 0.8rem;
+                    margin-right: 0.5rem;
+                }
+
+                // Trạng thái active cho link con
+                &.active {
+                    font-weight: 600;
+                    color: $sidebar-text-hover-color; // Màu trắng cho nổi bật
+                    background-color: transparent; // Không cần nền cho mục con
+
+                    // Không hiển thị thanh màu nhấn cho mục con
+                    &::before {
+                        display: none;
+                    }
+
+                    .icon-wrapper {
+                        color: $sidebar-text-hover-color; // Icon cũng có màu trắng
+                    }
+                }
+            }
+        }
+    }  }

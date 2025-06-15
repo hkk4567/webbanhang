@@ -1,126 +1,89 @@
 // src/components/Layout/AdminLayout/components/AdminHeader.js
-import React, { useState, useEffect, useRef } from 'react'; // Import thêm useState, useEffect, useRef
+
+import React from 'react';
 import { Link } from 'react-router-dom';
-import classNames from 'classnames/bind';
-import styles from '../AdminLayout.module.scss';
+import { Navbar, Container, Nav, Dropdown, Button, Badge } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCoffee, faBell, faUserCircle, faCogs, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faCoffee, faBell, faUserCircle, faCogs, faSignOutAlt, faBars } from '@fortawesome/free-solid-svg-icons';
+import classNames from 'classnames/bind';
+import styles from './header.module.scss'; // Đổi tên file import nếu cần
 import { useAdminAuth } from '../../../../context/AdminAuthContext';
 
 const cx = classNames.bind(styles);
 
-function AdminHeader() {
+function AdminHeader({ onToggleSidebar }) {
     const { admin, adminLogout } = useAdminAuth();
-    const [isDropdownOpen, setDropdownOpen] = useState(false);
-    const dropdownRef = useRef(null); // Ref để tham chiếu đến element dropdown
-
-    // Hàm để bật/tắt dropdown
-    const toggleDropdown = () => {
-        setDropdownOpen(!isDropdownOpen);
-    };
-
-    // Xử lý việc click ra ngoài để đóng dropdown
-    useEffect(() => {
-        function handleClickOutside(event) {
-            // Nếu dropdown đang mở và người dùng click ra ngoài khu vực của dropdown (dropdownRef.current)
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setDropdownOpen(false);
-            }
-        }
-
-        // Thêm event listener khi component được mount
-        document.addEventListener('mousedown', handleClickOutside);
-
-        // Dọn dẹp event listener khi component bị unmount
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [dropdownRef]); // Dependency là dropdownRef
 
     return (
-        <nav className={cx('navbar', 'navbar-expand-lg', 'navbar-dark', 'fixed-top', 'admin-header')}>
-            <div className="container-fluid">
-                {/* === HEADER LEFT: Logo and Offcanvas Trigger === */}
-                <div className={cx('header-left')}>
-                    {/* Offcanvas Trigger */}
-                    <button
-                        className={cx('navbar-toggler', 'sidebar-toggler')}
-                        type="button"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#adminSidebar"
-                        aria-controls="adminSidebar"
-                    >
-                        <span className="navbar-toggler-icon"></span>
-                    </button>
+        // Áp dụng các class utility của Bootstrap
+        <Navbar
+            fixed="top"
+            bg="dark"
+            variant="dark"
+            className={cx('admin-header', 'shadow-sm', 'border-bottom', 'border-secondary')}
+        >
+            <Container fluid className="px-4">
+                {/* Nút bật/tắt Sidebar */}
+                <Button
+                    variant="outline-secondary" // Dùng màu nhẹ hơn
+                    onClick={onToggleSidebar}
+                    className="d-lg-none me-3 border-0" // Bỏ viền cho đẹp
+                >
+                    <FontAwesomeIcon icon={faBars} />
+                </Button>
 
-                    {/* Logo Wrapper */}
-                    <Link className={cx('logo-wrapper')} to="/admin/dashboard">
-                        <div className={cx('brand-logo-circle')}>
-                            <FontAwesomeIcon icon={faCoffee} className={cx('logo-icon')} />
-                            <span className={cx('logo-text-inner')}>cafe</span>
-                        </div>
-                        <span className={cx('brand-text')}>CAFE ADMIN</span>
-                    </Link>
-                </div>
+                {/* Logo */}
+                <Navbar.Brand as={Link} to="/admin/dashboard" className={cx('logo-wrapper')}>
+                    <div className={cx('brand-logo-circle', 'd-flex', 'flex-column', 'align-items-center', 'justify-content-center', 'rounded-circle')}>
+                        <FontAwesomeIcon icon={faCoffee} className={cx('logo-icon')} />
+                        <span className={cx('logo-text-inner')}>cafe</span>
+                    </div>
+                    {/* Sử dụng class utility của Bootstrap */}
+                    <span className={cx('brand-text', 'ms-3', 'fw-semibold', 'd-none', 'd-sm-inline')}>CAFE ADMIN</span>
+                </Navbar.Brand>
 
-                {/* === HEADER RIGHT: Notifications, User Menu === */}
-                <div className={cx('header-right')}>
-                    <ul className={cx('navbar-nav', 'header-actions')}>
-                        {/* Notification Item */}
-                        <li className="nav-item">
-                            <a className={cx('nav-link', 'action-icon')} href="#!">
-                                <FontAwesomeIcon icon={faBell} />
-                                <span className={cx('badge', 'rounded-pill', 'bg-danger', 'notification-badge')}>3</span>
-                            </a>
-                        </li>
+                {/* Các mục bên phải Header */}
+                <Nav className="ms-auto d-flex flex-row align-items-center gap-3">
+                    {/* Notification */}
+                    <Nav.Link href="#!" className={cx('action-icon', 'position-relative', 'p-0', 'd-flex', 'align-items-center', 'justify-content-center')} style={{ width: '42px', height: '42px' }}>
+                        <FontAwesomeIcon icon={faBell} />
+                        <Badge
+                            pill
+                            bg="danger"
+                            className="position-absolute top-0 start-100 translate-middle border border-2 border-dark"
+                        >
+                            3
+                        </Badge>
+                    </Nav.Link>
 
-                        {/* User Profile Dropdown (Đã được kiểm soát bởi React state) */}
-                        <li className={cx('nav-item', 'dropdown')} ref={dropdownRef}>
-                            <button // Thay <a> bằng <button> để đúng ngữ nghĩa hơn
-                                className={cx('nav-link', 'dropdown-toggle', 'user-profile', 'action-icon')}
-                                type="button" // Thêm type="button"
-                                id="navbarDropdown"
-                                onClick={toggleDropdown} // Sử dụng onClick của React
-                                aria-expanded={isDropdownOpen} // Cập nhật aria-expanded
-                            >
-                                <FontAwesomeIcon icon={faUserCircle} />
-                            </button>
-                            <ul
-                                className={cx('dropdown-menu', 'dropdown-menu-end', 'user-dropdown-menu', {
-                                    show: isDropdownOpen, // Thêm class 'show' khi dropdown mở
-                                })}
-                                aria-labelledby="navbarDropdown"
-                            >
-                                <li className={cx('dropdown-header')}>
-                                    <h6 className="mb-0">{admin ? admin.fullName : 'Admin User'}</h6>
-                                    <span>{admin ? admin.email : 'admin@example.com'}</span>
-                                </li>
-                                <li><hr className={cx('dropdown-divider')} /></li>
-                                <li>
-                                    <Link className={cx('dropdown-item')} to="/admin/profile" onClick={() => setDropdownOpen(false)}>
-                                        <FontAwesomeIcon icon={faUserCircle} />
-                                        Hồ sơ
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link className={cx('dropdown-item')} to="/admin/settings" onClick={() => setDropdownOpen(false)}>
-                                        <FontAwesomeIcon icon={faCogs} />
-                                        Cài đặt
-                                    </Link>
-                                </li>
-                                <li><hr className={cx('dropdown-divider')} /></li>
-                                <li>
-                                    <button className={cx('dropdown-item', 'dropdown-item-logout')} onClick={adminLogout}>
-                                        <FontAwesomeIcon icon={faSignOutAlt} />
-                                        Đăng xuất
-                                    </button>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+                    {/* User Dropdown */}
+                    <Dropdown as={Nav.Item} align="end">
+                        <Dropdown.Toggle as="button" className={cx('user-profile', 'action-icon', 'p-0')}>
+                            <FontAwesomeIcon icon={faUserCircle} />
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu className={cx('user-dropdown-menu')}>
+                            <div className="text-center px-3 pt-2 pb-3">
+                                <h6 className="mb-1 fw-bold">{admin ? admin.fullName : 'Admin User'}</h6>
+                                <small className="text-muted">{admin ? admin.email : 'admin@example.com'}</small>
+                            </div>
+                            <Dropdown.Divider className="mx-2" />
+                            {/* Sử dụng class custom đã định nghĩa */}
+                            <Dropdown.Item as={Link} to="/admin/profile" className={cx('dropdown-item-custom')}>
+                                <FontAwesomeIcon icon={faUserCircle} /> Hồ sơ
+                            </Dropdown.Item>
+                            <Dropdown.Item as={Link} to="/admin/settings" className={cx('dropdown-item-custom')}>
+                                <FontAwesomeIcon icon={faCogs} /> Cài đặt
+                            </Dropdown.Item>
+                            <Dropdown.Divider className="mx-2" />
+                            <Dropdown.Item as="button" onClick={adminLogout} className={cx('dropdown-item-logout')}>
+                                <FontAwesomeIcon icon={faSignOutAlt} /> Đăng xuất
+                            </Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown>
+                </Nav>
+            </Container>
+        </Navbar>
     );
 }
 

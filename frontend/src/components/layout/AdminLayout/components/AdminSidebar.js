@@ -1,106 +1,105 @@
 // src/components/Layout/AdminLayout/components/AdminSidebar.js
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { Nav, Accordion, Offcanvas } from 'react-bootstrap'; // <-- Import các component chính
 import classNames from 'classnames/bind';
-import styles from '../AdminLayout.module.scss';
+import styles from './sidebar.module.scss'; // Đổi tên file scss cho nhất quán
 import { useAdminAuth } from '../../../../context/AdminAuthContext';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Sử dụng FontAwesome cho đẹp hơn
-import { faTachometerAlt, faUsers, faBoxOpen, faMugHot, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+    faTachometerAlt, faUsers, faBoxOpen, faMugHot, faSignOutAlt, faLayerGroup
+} from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
 
-function AdminSidebar() {
+// Nhận props từ AdminLayout để điều khiển việc hiển thị
+function AdminSidebar({ isMobileOpen, onHide }) {
     const { adminLogout } = useAdminAuth();
+    const getNavLinkClass = ({ isActive }) => {
+        // cx('nav-link') -> Luôn có class nav-link của module
+        // { [styles.active]: isActive } -> Thêm class active của module NẾU isActive là true
+        return cx('nav-link', { active: isActive });
+    };
+    // Nội dung của sidebar, có thể tái sử dụng
+    const sidebarContent = (
+        <Nav className="flex-column">
+            {/* CORE Section */}
+            <div className={cx('sidebar-section-title')}>CORE</div>
+
+            {/* 🔥 THAY ĐỔI: Bỏ Nav.Item và thêm prop `end` */}
+            <NavLink
+                to="/admin/dashboard"
+                className={getNavLinkClass}
+                end // <-- Quan trọng!
+            >
+                <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faTachometerAlt} /></span>
+                <span>Tổng quan</span>
+            </NavLink>
+
+            <hr className="dropdown-divider mx-3 my-2" />
+
+            {/* MANAGEMENT Section - Sử dụng Accordion */}
+            <div className={cx('sidebar-section-title')}>QUẢN LÝ</div>
+            <Accordion flush className={cx('sidebar-accordion')}>
+                <Accordion.Item eventKey="management-submenu" className={cx('accordion-item')}>
+                    <Accordion.Header className={cx('submenu-toggle')}>
+                        <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faLayerGroup} /></span>
+                        <span>Chức năng</span>
+                    </Accordion.Header>
+                    <Accordion.Body className={cx('submenu-body')}>
+                        <Nav className="flex-column">
+                            <NavLink to="/admin/customers" className={getNavLinkClass}>
+                                <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faUsers} /></span>
+                                <span>Khách Hàng</span>
+                            </NavLink>
+                            <NavLink to="/admin/orders" className={getNavLinkClass}>
+                                <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faBoxOpen} /></span>
+                                <span>Đơn Hàng</span>
+                            </NavLink>
+                            <NavLink to="/admin/products" className={getNavLinkClass}>
+                                <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faMugHot} /></span>
+                                <span>Sản phẩm</span>
+                            </NavLink>
+                        </Nav>
+                    </Accordion.Body>
+                </Accordion.Item>
+            </Accordion>
+
+            <hr className="dropdown-divider mx-3 my-2" />
+
+            {/* Logout */}
+            <Nav.Item>
+                <Nav.Link as="button" onClick={adminLogout} className={cx('nav-link', 'logout-btn')}>
+                    <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faSignOutAlt} /></span>
+                    <span>Đăng xuất</span>
+                </Nav.Link>
+            </Nav.Item>
+        </Nav>
+    );
 
     return (
-        <div
-            className={cx('offcanvas', 'offcanvas-start', 'sidebar-nav')}
-            tabIndex="-1"
-            id="adminSidebar"
-            aria-labelledby="adminSidebarLabel"
+        <Offcanvas
+            show={isMobileOpen}
+            onHide={onHide}
+            responsive="lg" // <-- Điểm mấu chốt: tự động chuyển đổi ở breakpoint 'lg' (992px)
+            className={cx('sidebar-nav')}
+            placement="start"
         >
-            {/* Sidebar Header */}
-            <div className={cx('sidebar-header')}>
-                <h5 className={cx('sidebar-title')} id="adminSidebarLabel">
-                    Admin Panel
-                </h5>
-            </div>
-
-            {/* Sidebar Body */}
-            <div className="offcanvas-body p-0">
-                <nav className="navbar-dark">
-                    <ul className="navbar-nav">
-                        {/* CORE Section */}
-                        <li>
-                            <div className={cx('sidebar-section-title')}>CORE</div>
-                        </li>
-                        <li>
-                            {/* Dùng NavLink và gán activeClassName */}
-                            <NavLink to="/admin/dashboard" className={({ isActive }) => cx('nav-link', { active: isActive })}>
-                                <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faTachometerAlt} /></span>
-                                <span>Tổng quan</span>
-                            </NavLink>
-                        </li>
-
-                        <li className="my-2"><hr className="dropdown-divider" /></li>
-
-                        {/* MANAGEMENT Section */}
-                        <li>
-                            <div className={cx('sidebar-section-title')}>QUẢN LÝ</div>
-                        </li>
-                        <li>
-                            {/* Trigger for Collapsible Menu */}
-                            <a
-                                className={cx('nav-link', 'submenu-toggle')}
-                                data-bs-toggle="collapse"
-                                href="#management-submenu"
-                                role="button"
-                                aria-expanded="false"
-                                aria-controls="management-submenu"
-                            >
-                                <span className={cx('icon-wrapper')}><i className="bi bi-stack"></i></span>
-                                <span>Chức năng</span>
-                                <span className={cx('submenu-arrow')}><i className="bi bi-chevron-down"></i></span>
-                            </a>
-                            {/* Collapsible Submenu */}
-                            <div className="collapse" id="management-submenu">
-                                <ul className={cx('submenu')}>
-                                    <li>
-                                        <NavLink to="/admin/customers" className={({ isActive }) => cx('nav-link', { active: isActive })}>
-                                            <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faUsers} /></span>
-                                            <span>Khách Hàng</span>
-                                        </NavLink>
-                                    </li>
-                                    <li>
-                                        <NavLink to="/admin/orders" className={({ isActive }) => cx('nav-link', { active: isActive })}>
-                                            <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faBoxOpen} /></span>
-                                            <span>Đơn Hàng</span>
-                                        </NavLink>
-                                    </li>
-                                    <li>
-                                        <NavLink to="/admin/products" className={({ isActive }) => cx('nav-link', { active: isActive })}>
-                                            <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faMugHot} /></span>
-                                            <span>Sản phẩm</span>
-                                        </NavLink>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-
-                        <li className="my-2"><hr className="dropdown-divider" /></li>
-
-                        {/* Logout */}
-                        <li>
-                            <button onClick={adminLogout} className={cx('nav-link', 'logout-btn')}>
-                                <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faSignOutAlt} /></span>
-                                <span>Đăng xuất</span>
-                            </button>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
+            <Offcanvas.Header closeButton className="d-lg-none">
+                <Offcanvas.Title><p className='text-white'>Menu</p></Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body className="p-0 d-flex flex-column">
+                <div className={cx('sidebar-header')}>
+                    <h5 className={cx('sidebar-title')}>
+                        Admin Panel
+                    </h5>
+                </div>
+                <div className="flex-grow-1 overflow-auto">
+                    {sidebarContent} {/* Tái sử dụng nội dung menu đã định nghĩa ở trên */}
+                </div>
+            </Offcanvas.Body>
+        </Offcanvas>
     );
 }
 

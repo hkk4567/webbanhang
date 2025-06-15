@@ -1,36 +1,70 @@
-// src/components/Layout/AdminLayout/AdminLayout.module.scss
+/* src/components/Layout/AdminLayout/AdminLayout.module.scss */
 
-// 1. Import các biến số trước tiên để các file khác có thể sử dụng
-@import 'variables';
+// === BIẾN SỐ CỐ ĐỊNH ===
+// Định nghĩa các biến số quan trọng ở một nơi duy nhất.
+// Giả sử bạn đã có file _variables.scss, nếu không, hãy định nghĩa chúng ở đây.
+$header-height: 70px; // Chiều cao của header cố định
+$sidebar-width: 280px; // Chiều rộng của sidebar trên desktop
+$admin-bg-color: #f4f7fa; // Màu nền chung của layout
 
-// 2. Import các file SCSS thành phần
-@import 'header.module';
-@import 'sidebar.module';
-
-// 3. Định nghĩa các style layout chung nhất
+// === LAYOUT CHÍNH ===
 .admin-layout {
-    background-color: $admin-bg-color;
+    // Không cần nhiều style ở đây, chỉ là một container.
+    position: relative;
     min-height: 100vh;
 }
 
-.main-content {
+// === CONTAINER CHO BODY (PHẦN QUAN TRỌNG NHẤT) ===
+.admin-body {
+    /* 
+     * [FIX 1]: Đẩy toàn bộ body (cả sidebar và content) xuống dưới header.
+     * Áp dụng padding-top cho container chung thay vì chỉ cho main-content.
+     */
     padding-top: $header-height;
-    padding-left: 0;
-    padding-right: 0;
-    transition: margin-left 0.3s ease-in-out;
-    overflow: hidden;
-    @media (min-width: 992px) {
-        margin-left: calc($sidebar-width + 10px);
-        margin-top: 10px;
-        // Áp dụng padding cho nội dung bên trong để thoáng hơn
-        >div {
-            padding: 24px;
-        }
-    }
 
-    @media (max-width: 991.98px) {
-        >div {
-            padding: 16px;
-        }
+    /*
+     * [FIX 2]: Sử dụng Flexbox để sắp xếp sidebar và main-content.
+     * Đây là cách hiện đại và ổn định nhất.
+     */
+    display: flex;
+    flex-wrap: nowrap; // Đảm bảo các item không bị rớt hàng
+
+    // Đảm bảo container này chiếm đủ chiều cao để sidebar có thể cuộn.
+    height: 100vh;
+}
+
+
+// === KHU VỰC NỘI DUNG CHÍNH ===
+.main-content {
+    /* 
+     * [FIX 3]: Cho phép nội dung chính co giãn để lấp đầy không gian.
+     * Nó sẽ tự động chiếm hết khoảng trống còn lại bên cạnh sidebar.
+     * Không cần dùng `margin-left` nữa.
+     */
+    flex-grow: 1;
+
+    // Chiều rộng tối thiểu để không bị bóp méo quá mức
+    min-width: 0;
+
+    /* 
+     * [FIX 4]: Cho phép chỉ nội dung chính được cuộn.
+     * Điều này giữ cho header và sidebar cố định khi người dùng cuộn trang.
+     */
+    overflow-y: auto;
+
+    // Thêm padding để nội dung bên trong không bị dính vào cạnh.
+    padding: 24px;
+    background-color: $admin-bg-color;
+}
+
+// === ĐIỀU CHỈNH CHO MÀN HÌNH NHỎ ===
+// Trên màn hình nhỏ (<992px), component Offcanvas sẽ tự động
+// trở thành một lớp phủ (overlay) và không còn là một flex-item nữa.
+// Do đó, .main-content sẽ tự động chiếm 100% chiều rộng.
+// Chúng ta không cần viết media query để xử lý việc này!
+// Tuy nhiên, có thể giảm padding cho đẹp hơn.
+@media (max-width: 767.98px) {
+    .main-content {
+        padding: 16px;
     }
 }
