@@ -1,0 +1,37 @@
+.filter-section {
+    background-color: white;
+    border: none;
+    border-radius: 0.5rem;
+}
+
+// Style cho các badge trạng thái
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: white;
+    white-space: nowrap; // Đảm bảo badge không bị xuống dòng
+
+    // Dùng & để nối class, tạo ra .status-badge.status--chua-xu-ly
+    &.status--chua-xu-ly {
+        background-color: #ffc107; // warning
+        color: #333; // Chữ tối màu để dễ đọc trên nền vàng
+    }
+
+    &.status--da-xac-nhan {
+        background-color: #17a2b8; // info
+    }
+
+    &.status--dang-giao {
+        background-color: #0d6efd; // primary
+    }
+
+    &.status--giao-thanh-cong {
+        background-color: #28a745; // success
+    }
+
+    &.status--da-huy {
+        background-color: #dc3545; // danger
+    }
+}
