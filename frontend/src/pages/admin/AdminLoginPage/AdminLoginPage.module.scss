@@ -1,26 +1,114 @@
+// src/pages/Admin/AdminLoginPage/AdminLoginPage.module.scss
 
+// Wrapper bao bọc toàn bộ trang, tạo nền và căn giữa
+.login-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #f0f2f5; // Một màu nền xám nhẹ
+    background-image: linear-gradient(135deg, #eef2f3 0%, #8e9eab 100%); // Hoặc gradient
+}
 
+// Hộp đăng nhập chính
 .login-box {
+    width: 100%;
+    max-width: 420px;
     background: white;
     padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     text-align: center;
+    transition: transform 0.3s ease;
+
+    &:hover {
+        transform: translateY(-5px);
+    }
+}
+
+// Logo hoặc icon đại diện
+.logo {
+    font-size: 3.5rem;
+    color: var(--bs-primary); // Sử dụng màu primary của Bootstrap
+    margin-bottom: 1rem;
 }
 
 .title {
-    margin-bottom: 2rem;
-    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    font-size: 1.75rem;
+    color: #333;
 }
 
+.subtitle {
+    margin-bottom: 2rem;
+    color: #6c757d; // Màu xám phụ
+}
+
+// Nâng cấp input
+:global(.form-control) {
+    padding: 0.85rem 1rem;
+
+    &:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    }
+}
+
+:global(.input-group-text) {
+    background-color: transparent;
+    border-right: none;
+    color: #6c757d;
+}
+
+:global(.input-group .form-control) {
+    border-left: none;
+}
+
+// Nút hiện/ẩn mật khẩu
+.password-toggle {
+    border-left: none;
+    background-color: transparent; // Nền trong suốt ban đầu
+    transition: background-color 0.2s ease;
+
+    i {
+        vertical-align: middle;
+        color: #6c757d; // Màu xám mặc định
+        transition: color 0.2s ease;
+    }
+
+    &:hover,
+    &:focus {
+        // Sử dụng một màu nền xám rất nhẹ, có độ trong suốt
+        background-color: rgba(0, 0, 0, 0.05); // Màu đen với độ trong suốt 5%
+        box-shadow: none;
+
+        // Đồng thời làm đậm màu icon
+        i {
+            color: #000; // Màu đen tuyền để nổi bật
+        }
+    }
+}
+
+
+// Thông báo lỗi
 .error-message {
     font-size: 0.9rem;
+    text-align: left;
     padding: 10px;
-    margin-top: -10px;
     margin-bottom: 15px;
 }
 
+// Nút Submit
 .submit-btn {
-    padding: 10px;
+    width: 100%;
+    padding: 12px;
     font-weight: bold;
+    font-size: 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s, transform 0.2s;
+
+    &:hover {
+        transform: translateY(-2px);
+    }
 }

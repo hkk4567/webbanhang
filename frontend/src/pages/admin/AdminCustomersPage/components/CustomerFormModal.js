@@ -85,11 +85,10 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
                             <Form.Group className="mb-3">
                                 <Form.Label>Loại tài khoản</Form.Label>
                                 <Form.Select name="type" value={formData.type} onChange={handleChange} required>
-                                    <option value="">-- Lựa chọn --</option>
-                                    <option value="Khách mới">Khách mới</option>
-                                    <option value="Thành viên Bạc">Thành viên Bạc</option>
-                                    <option value="Thành viên Vàng">Thành viên Vàng</option>
-                                    <option value="Thành viên Kim Cương">Thành viên Kim Cương</option>
+                                    <option value="" disabled>-- Chọn loại tài khoản --</option>
+                                    <option value="Thường">Thường</option>
+                                    <option value="Thân thiết">Thân thiết</option>
+                                    <option value="VIP">VIP</option>
                                     <option value="Admin">Admin (Tài khoản quản trị)</option>
                                 </Form.Select>
                             </Form.Group>

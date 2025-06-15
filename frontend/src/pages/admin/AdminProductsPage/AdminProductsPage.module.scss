@@ -6,6 +6,13 @@
     margin-right: 15px;
 }
 
+.product-image-large {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
 .status-badge {
     padding: 5px 10px;
     border-radius: 15px;
@@ -20,4 +27,19 @@
     &.status-inactive {
         background-color: #6c757d; // Màu xám
     }
+}
+
+.status-success {
+    background-color: #198754; // Màu xanh lá cây
+}
+
+// Modifier cho trạng thái "Sắp hết hàng"
+.status-warning {
+    background-color: #ffc107; // Màu vàng
+    color: #000; // Chữ màu đen để dễ đọc hơn trên nền vàng
+}
+
+// Modifier cho trạng thái "Hết hàng"
+.status-danger {
+    background-color: #dc3545; // Màu đỏ
 }

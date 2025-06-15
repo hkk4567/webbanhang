@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './PurchaseHistoryPage.module.scss';
 
+import { usePagination } from '../../../hooks/usePagination';
+import Pagination from '../../../components/common/Pagination';
+
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleRight, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 
 const cx = classNames.bind(styles);
-
+const ITEMS_PER_PAGE = 5;
 // Dữ liệu giả lập - Trong thực tế, bạn sẽ fetch dữ liệu này từ API sau khi người dùng đăng nhập
 const mockPurchaseHistory = [
     {
@@ -44,7 +47,7 @@ const mockPurchaseHistory = [
 function PurchaseHistoryPage() {
     const [orders, setOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-
+    const { currentData, currentPage, maxPage, jump } = usePagination(orders, ITEMS_PER_PAGE);
     // Mô phỏng việc lấy dữ liệu lịch sử mua hàng từ API
     useEffect(() => {
         setIsLoading(true);
@@ -87,16 +90,16 @@ function PurchaseHistoryPage() {
                             {isLoading ? (
                                 <div className="text-center py-5">Đang tải lịch sử mua hàng...</div>
                             ) : orders.length > 0 ? (
-                                orders.map((order) => (
+                                // --- BƯỚC 3: RENDER DỮ LIỆU TỪ `currentData` THAY VÌ `orders` ---
+                                currentData.map((order) => (
                                     <div key={order.orderId} className={cx('history-user')}>
+                                        {/* ... Phần JSX hiển thị chi tiết một đơn hàng giữ nguyên ... */}
                                         <div className={cx('order-header')}>
                                             <span>Mã đơn hàng: <strong>{order.orderId}</strong></span>
                                             <span className={cx('order-status', `status--${order.status.replace(/\s+/g, '-').toLowerCase()}`)}>
                                                 {order.status}
                                             </span>
                                         </div>
-
-                                        {/* Render danh sách sản phẩm trong mỗi đơn hàng */}
                                         {order.items.map((item) => (
                                             <div key={item.id} className={cx('product-history')}>
                                                 <div className={cx('product-history-detail')}>
@@ -111,7 +114,6 @@ function PurchaseHistoryPage() {
                                                 </div>
                                             </div>
                                         ))}
-
                                         <div className={cx('order-footer')}>
                                             <div className={cx('product-history-date')}>Ngày đặt: {order.date}</div>
                                             <div className={cx('product-history-total-price')}>
@@ -129,17 +131,13 @@ function PurchaseHistoryPage() {
                         </div>
 
                         {/* Pagination (chỉ hiển thị khi có đơn hàng) */}
-                        {!isLoading && orders.length > 0 && (
-                            <div className={cx('product-search-pagination-container', 'col-12')}>
-                                <button type="button" className={cx('pagination-button', 'left-pagination-button')}>
-                                    <FontAwesomeIcon icon={faChevronLeft} />
-                                </button>
-                                <div className={cx('product-search-pagination')}>
-                                    {/* Logic render các nút số trang sẽ ở đây */}
-                                </div>
-                                <button type="button" className={cx('pagination-button', 'right-pagination-button')}>
-                                    <FontAwesomeIcon icon={faChevronRight} />
-                                </button>
+                        {!isLoading && orders.length > ITEMS_PER_PAGE && (
+                            <div className="col-12 mt-4">
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPageCount={maxPage}
+                                    onPageChange={page => jump(page)}
+                                />
                             </div>
                         )}
                     </div>

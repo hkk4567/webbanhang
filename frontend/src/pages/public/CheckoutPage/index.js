@@ -172,11 +172,11 @@ function CheckoutPage() {
                         </div>
                         <div className={cx('price-summary')}>
                             <div className="d-flex justify-content-between mb-2">
-                                <span>Tạm tính</span>
+                                <span>Tạm tính___</span>
                                 <span>{formatCurrency(totalPrice)}</span>
                             </div>
                             <div className="d-flex justify-content-between">
-                                <span>Phí vận chuyển</span>
+                                <span>Phí vận chuyển___</span>
                                 <span>{formatCurrency(shippingFee)}</span>
                             </div>
                         </div>

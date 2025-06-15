@@ -1,55 +1,110 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
+import { Form, InputGroup, Button, Spinner } from 'react-bootstrap'; // Import thêm các component cần thiết
 import styles from './AdminLoginPage.module.scss';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
 
 const cx = classNames.bind(styles);
 
 function AdminLoginPage() {
-    const [password, setPassword] = useState('');
+    // Sử dụng state object để quản lý cả email và mật khẩu
+    const [credentials, setCredentials] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false); // State cho trạng thái loading
+    const [showPassword, setShowPassword] = useState(false); // State để hiện/ẩn mật khẩu
+
     const { adminLogin } = useAdminAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    // Hàm xử lý chung cho các ô input
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setCredentials(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); // Xóa lỗi cũ
+        setError('');
+        setIsLoading(true);
 
-        // Gọi hàm login từ context
-        const loginSuccess = adminLogin(password);
+        // Giả lập một yêu cầu mạng (trong thực tế, đây là lúc gọi API)
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        if (loginSuccess) {
-            // Nếu thành công, điều hướng đến trang dashboard của admin
-            navigate('/admin/dashboard');
-        } else {
-            // Nếu thất bại, hiển thị thông báo lỗi
-            setError('Mật khẩu không chính xác. Vui lòng thử lại.');
+        try {
+            // Cập nhật hàm login để chấp nhận email và password
+            const loginSuccess = adminLogin(credentials.email, credentials.password);
+
+            if (loginSuccess) {
+                navigate('/admin/dashboard');
+            } else {
+                setError('Email hoặc mật khẩu không chính xác.');
+            }
+        } catch (err) {
+            setError('Đã xảy ra lỗi. Vui lòng thử lại.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <div className={cx('login-wrapper')}>
             <div className={cx('login-box')}>
-                <h2 className={cx('title')}>Admin Login</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                        <label htmlFor="password" className="form-label">Mật khẩu Admin:</label>
-                        <input
-                            type="password"
-                            id="password"
-                            className="form-control"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Nhập mật khẩu của bạn"
+                <div className={cx('logo')}>
+                    <i className="bi bi-shield-lock-fill"></i>
+                </div>
+                <h2 className={cx('title')}>Trang Quản trị</h2>
+                <p className={cx('subtitle')}>Đăng nhập để tiếp tục</p>
+
+                <Form onSubmit={handleSubmit}>
+                    <InputGroup className="mb-3">
+                        <InputGroup.Text><i className="bi bi-envelope-fill"></i></InputGroup.Text>
+                        <Form.Control
+                            type="email"
+                            name="email"
+                            value={credentials.email}
+                            onChange={handleChange}
+                            placeholder="Email"
                             required
+                            disabled={isLoading}
                         />
-                    </div>
+                    </InputGroup>
+
+                    <InputGroup className="mb-3">
+                        <InputGroup.Text><i className="bi bi-key-fill"></i></InputGroup.Text>
+                        <Form.Control
+                            type={showPassword ? 'text' : 'password'}
+                            name="password"
+                            value={credentials.password}
+                            onChange={handleChange}
+                            placeholder="Mật khẩu"
+                            required
+                            disabled={isLoading}
+                        />
+                        <Button variant="outline-secondary" onClick={() => setShowPassword(!showPassword)} className={cx('password-toggle')}>
+                            <i className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
+                        </Button>
+                    </InputGroup>
+
                     {error && <div className={cx('error-message', 'alert', 'alert-danger')}>{error}</div>}
-                    <button type="submit" className={cx('submit-btn', 'btn', 'btn-primary', 'w-100')}>
-                        Đăng nhập
-                    </button>
-                </form>
+
+                    <Button type="submit" className={cx('submit-btn')} disabled={isLoading}>
+                        {isLoading ? (
+                            <>
+                                <Spinner
+                                    as="span"
+                                    animation="border"
+                                    size="sm"
+                                    role="status"
+                                    aria-hidden="true"
+                                />
+                                <span className="ms-2">Đang xử lý...</span>
+                            </>
+                        ) : (
+                            'Đăng nhập'
+                        )}
+                    </Button>
+                </Form>
             </div>
         </div>
     );
