@@ -45,7 +45,7 @@ function AdminSidebar({ isMobileOpen, onHide }) {
                 <Accordion.Item eventKey="management-submenu" className={cx('accordion-item')}>
                     <Accordion.Header className={cx('submenu-toggle')}>
                         <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faLayerGroup} /></span>
-                        <span>Chức năng</span>
+                        <span className='ms-3'>Chức năng</span>
                     </Accordion.Header>
                     <Accordion.Body className={cx('submenu-body')}>
                         <Nav className="flex-column">
