@@ -199,30 +199,37 @@ function AdminOrdersPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {currentData.map((order, index) => (
-                                        <tr key={order.id}>
-                                            <td>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
-                                            <td>{order.customerName}</td>
-                                            <td>{order.date}</td>
-                                            <td>{`${order.address.ward}, ${order.address.district}, ${order.address.city}`}</td>
-                                            <td>{order.total.toLocaleString('vi-VN')}đ</td>
-                                            <td>
-                                                <span
-                                                    className={cx(
-                                                        'status-badge',
-                                                        `status--${removeDiacritics(order.status).replace(/\s+/g, '-').toLowerCase()}`
-                                                    )}
-                                                >
-                                                    {order.status}
-                                                </span>
-                                            </td>
-                                            <td className="text-center">
-                                                <Button variant="outline-info" size="sm" onClick={() => handleViewDetails(order)}>
-                                                    <i className="bi bi-eye"></i> Xem
-                                                </Button>
-                                            </td>
+                                    {currentData.length > 0 ? (
+                                        currentData.map((order, index) => (
+                                            <tr key={order.id}>
+                                                <td>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
+                                                <td>{order.customerName}</td>
+                                                <td>{order.date}</td>
+                                                <td>{`${order.address.ward}, ${order.address.district}, ${order.address.city}`}</td>
+                                                <td>{order.total.toLocaleString('vi-VN')}đ</td>
+                                                <td>
+                                                    <span
+                                                        className={cx(
+                                                            'status-badge',
+                                                            `status--${removeDiacritics(order.status).replace(/\s+/g, '-').toLowerCase()}`
+                                                        )}
+                                                    >
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                                <td className="text-center">
+                                                    <Button variant="outline-info" size="sm" onClick={() => handleViewDetails(order)}>
+                                                        <i className="bi bi-eye"></i> Xem
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="7" className="text-center p-4">Không tìm thấy đơn hàng nào.</td>
                                         </tr>
-                                    ))}
+                                    )
+                                    }
                                 </tbody>
                             </table>
                         </div>
