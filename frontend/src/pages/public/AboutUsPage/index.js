@@ -132,7 +132,7 @@ function AboutUsPage() {
                         <p className="lead mb-4">
                             Khám phá thực đơn đa dạng từ cà phê truyền thống đến các món đá xay sáng tạo của chúng tôi.
                         </p>
-                        <Link to="/product" className="btn btn-primary btn-lg">
+                        <Link to="/products" className="btn btn-primary btn-lg">
                             Xem Thực Đơn
                         </Link>
                     </div>
