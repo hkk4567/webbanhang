@@ -156,7 +156,7 @@ function Home() {
                     </div>
                     <div className="row mt-5">
                         <div className="col-12 text-center" style={{ textAlign: 'center', marginTop: '20px' }}>
-                            <Link to="/product" className={cx('btn-readmore')}>Xem thêm menu</Link>
+                            <Link to="/products" className={cx('btn-readmore')}>Xem thêm menu</Link>
                         </div>
                     </div>
                 </div>

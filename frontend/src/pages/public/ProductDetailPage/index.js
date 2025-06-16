@@ -13,7 +13,14 @@ import { faAngleRight, faMinus, faPlus, faCartPlus } from '@fortawesome/free-sol
 import { faFacebookSquare, faInstagram, faGooglePlusG, faPinterest } from '@fortawesome/free-brands-svg-icons';
 
 const cx = classNames.bind(styles);
-
+const slugify = (str) => {
+    if (!str) return '';
+    str = str.toString().toLowerCase().trim();
+    str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    str = str.replace(/đ/g, 'd');
+    str = str.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-');
+    return str;
+};
 function ProductDetailPage() {
     const { id } = useParams(); // Lấy 'id' từ URL
 
@@ -52,7 +59,7 @@ function ProductDetailPage() {
         return (
             <div className="container text-center py-5">
                 <h2>Đang tải... hoặc sản phẩm không tồn tại</h2>
-                <Link to="/product" className="btn btn-primary">Xem tất cả sản phẩm</Link>
+                <Link to="/products" className="btn btn-primary">Xem tất cả sản phẩm</Link>
             </div>
         );
     }
@@ -68,7 +75,7 @@ function ProductDetailPage() {
                             <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
                         </li>
                         <li className={cx('breadrumb-product-type')}>
-                            <Link to={`/category/${product.category}`}>{product.category}</Link>
+                            <Link to={`/products/${slugify(product.category)}`}>{product.category}</Link>
                             <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
                         </li>
                         <li className={cx('breadrumb-product-name')}>

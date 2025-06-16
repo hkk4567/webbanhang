@@ -82,7 +82,7 @@ function CheckoutPage() {
             navigate('/login');
         } else if (cartItems.length === 0) {
             alert('Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm để thanh toán.');
-            navigate('/product');
+            navigate('/products');
         }
     }, [isLoggedIn, cartItems, navigate]);
 

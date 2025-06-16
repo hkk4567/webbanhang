@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom'; // Import Link để điều hướng
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom'; // Import Link để điều hướng
 import classNames from 'classnames/bind';
 import styles from '../Main.module.scss';
 // --- IMPORT CÁC THÀNH PHẦN CẦN THIẾT ---
@@ -41,7 +41,19 @@ const priceRanges = {
         label: 'Trên 500.000đ'
     },
 };
+
+const slugify = (str) => {
+    if (!str) return '';
+    str = str.toString().toLowerCase().trim();
+    str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    str = str.replace(/đ/g, 'd');
+    str = str.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-');
+    return str;
+};
+
 function Product() {
+    const { categoryName } = useParams(); // Lấy 'categoryName' từ URL (vd: /products/Rau-củ)
+    const navigate = useNavigate(); // Hook để điều hướng
     // --- STATE MANAGEMENT CHO VIỆC LỌC VÀ SẮP XẾP ---
     const [activeCategory, setActiveCategory] = useState('Tất cả');
     const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
@@ -50,6 +62,28 @@ function Product() {
 
     const [showModal, setShowModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    // Lấy danh sách danh mục duy nhất từ dữ liệu sản phẩm
+    const categories = useMemo(() => {
+        return ['Tất cả', ...new Set(mockAllProducts.map(p => p.category))];
+    }, []);
+    const categoryLookupMap = useMemo(() => {
+        const map = {};
+        categories.forEach(cat => {
+            map[slugify(cat)] = cat;
+        });
+        return map;
+    }, [categories]);
+
+    useEffect(() => {
+        // Tìm tên danh mục gốc từ slug trên URL
+        // Nếu slug tồn tại và hợp lệ, lấy tên gốc từ map. Ngược lại, là 'Tất cả'
+        const categoryFromURL = categoryName ? categoryLookupMap[categoryName] : 'Tất cả';
+        setActiveCategory(categoryFromURL || 'Tất cả');
+
+        // Reset các bộ lọc khác
+        setSelectedPriceRanges([]);
+        setSortOrder('default');
+    }, [categoryName, categoryLookupMap]);
     // --- 3. LOGIC LỌC VÀ SẮP XẾP SẢN PHẨM ---
     const processedProducts = useMemo(() => {
         // BƯỚC 1: Bắt đầu với một mảng tạm thời từ danh sách gốc
@@ -98,7 +132,14 @@ function Product() {
     const { currentData, currentPage, maxPage, jump } = usePagination(processedProducts, ITEMS_PER_PAGE);
     // --- 5. CÁC HÀM XỬ LÝ SỰ KIỆN ---
     const handleCategoryFilter = (category) => {
-        setActiveCategory(category);
+        if (category === 'Tất cả') {
+            // Điều hướng đến URL mới cho tất cả sản phẩm
+            navigate('/products');
+        } else {
+            // Điều hướng đến URL mới cho danh mục cụ thể
+            const slug = slugify(category);
+            navigate(`/products/${slug}`);
+        }
     };
 
     const handlePriceChange = (e) => {
@@ -116,8 +157,6 @@ function Product() {
     const handleShowModal = (product) => { setSelectedProduct(product); setShowModal(true); };
     const handleCloseModal = () => { setShowModal(false); setSelectedProduct(null); };
 
-    // Lấy danh sách danh mục duy nhất từ dữ liệu sản phẩm
-    const categories = ['Tất cả', ...new Set(mockAllProducts.map(p => p.category))];
 
     return (
         <>

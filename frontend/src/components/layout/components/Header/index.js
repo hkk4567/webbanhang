@@ -113,7 +113,7 @@ function Header() {
                                             </NavLink>
                                         </li>
                                         <li className={cx('menu-dropdown__item')}>
-                                            <NavLink to="/product"
+                                            <NavLink to="/products"
                                                 className={({ isActive }) => cx('nav__link', { active: isActive })}
                                                 onClick={closeAllMenus}>
                                                 Sản phẩm
@@ -170,7 +170,7 @@ function Header() {
                                     </NavLink>
                                 </li>
                                 <li className={cx('nav__item')}>
-                                    <NavLink to="/product"
+                                    <NavLink to="/products"
                                         className={({ isActive }) => cx('nav__link', { active: isActive })}
                                         onClick={closeAllMenus}>
                                         Sản phẩm

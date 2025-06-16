@@ -83,7 +83,7 @@ function Footer() {
                             <ul className={cx('policy-list')}>
                                 <li><Link to="/">Trang chủ</Link></li>
                                 <li><Link to="/aboutus">Giới thiệu</Link></li>
-                                <li><Link to="/product">Sản phẩm</Link></li>
+                                <li><Link to="/products">Sản phẩm</Link></li>
                                 <li><Link to="/newspage">Tin tức</Link></li>
                                 <li><Link to="/contactpage">Liên hệ</Link></li>
                             </ul>

@@ -125,7 +125,7 @@ function PurchaseHistoryPage() {
                             ) : (
                                 <div className="text-center py-5">
                                     <h3>Bạn chưa có đơn hàng nào.</h3>
-                                    <Link to="/product" className="btn btn-primary mt-3">Bắt đầu mua sắm</Link>
+                                    <Link to="/products" className="btn btn-primary mt-3">Bắt đầu mua sắm</Link>
                                 </div>
                             )}
                         </div>

@@ -52,7 +52,7 @@ function CartProduct() {
                         // Trường hợp giỏ hàng rỗng
                         <div className="text-center py-5">
                             <h2 className="mb-3">Giỏ hàng của bạn đang trống</h2>
-                            <Link to="/product" className="btn btn-primary">
+                            <Link to="/products" className="btn btn-primary">
                                 Quay lại mua sắm
                             </Link>
                         </div>
@@ -89,7 +89,7 @@ function CartProduct() {
                                     <Link to="/checkout" className="btn btn-primary w-100">
                                         Tiến hành Thanh toán
                                     </Link>
-                                    <Link to="/product" className="btn btn-outline-secondary w-100 mt-2">
+                                    <Link to="/products" className="btn btn-outline-secondary w-100 mt-2">
                                         Tiếp tục mua sắm
                                     </Link>
                                 </div>
