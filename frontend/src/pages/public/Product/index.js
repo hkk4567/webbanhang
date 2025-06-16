@@ -245,7 +245,7 @@ function Product() {
                                 </div>
                                 <div className={cx('sort-by')}>
                                     <span>Sắp xếp:</span>
-                                    <select name="sort-by" id="sort-by" onChange={handleSortChange} value={sortOrder}>
+                                    <select className='p-2 ms-2' name="sort-by" id="sort-by" onChange={handleSortChange} value={sortOrder}>
                                         <option value="default">Sắp xếp theo</option>
                                         <option value="name-asc">Tên (A-Z)</option>
                                         <option value="name-desc">Tên (Z-A)</option>
