@@ -11,12 +11,12 @@ const helmet = require('helmet'); // Thêm helmet để tăng cường bảo m�
 const sequelize = require('./config/database');
 
 // Import các Routes
-const userRoutes = require('./routes/user.routes');
+const mainRoutes = require('./routes');
 // const productRoutes = require('./routes/product.route'); // Ví dụ thêm route khác
 
 // Import Middleware xử lý lỗi
 const errorHandler = require('./middlewares/errorHandler');
-
+const AppError = require('./utils/appError');
 // 3. Khởi tạo ứng dụng Express
 const app = express();
 
@@ -37,10 +37,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 5. Kết nối Database
-sequelize
-    .authenticate()
-    .then(() => console.log('✅ Kết nối database thành công.'))
-    .catch((err) => console.error('❌ Không thể kết nối đến database:', err));
+(async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('✅ Kết nối database thành công.');
+    } catch (error) {
+        console.error('❌ Không thể kết nối đến database:', error);
+        process.exit(1); // Thoát ứng dụng nếu không thể kết nối DB
+    }
+})();
 
 // 6. Định nghĩa các API Routes
 app.get('/api/healthcheck', (req, res) => {
@@ -48,23 +53,12 @@ app.get('/api/healthcheck', (req, res) => {
 });
 
 // Gắn các routes của ứng dụng vào
-app.use('/api/users', userRoutes);
-// app.use('/api/products', productRoutes);
+app.use('/api', mainRoutes);
 
 // 7. Sử dụng các Middleware XỬ LÝ LỖI (phải được đặt SAU CÙNG, sau tất cả các routes)
 // Middleware cho các route không tồn tại (404 Not Found)
-app.use((req, res, next) => {
-    // Thêm điều kiện kiểm tra ở đây
-    if (req.originalUrl.startsWith('/.well-known')) {
-        // Nếu là request từ DevTools, chỉ cần trả về 204 No Content và không làm gì thêm
-        // Trình duyệt sẽ nhận được phản hồi và sẽ không thử lại.
-        return res.status(204).send();
-    }
-
-    // Đối với tất cả các route không khớp khác, vẫn tạo lỗi 404 như bình thường
-    const error = new Error(`Không tìm thấy - ${req.originalUrl}`);
-    error.statusCode = 404;
-    next(error); // Chuyển lỗi này đến errorHandler
+app.all('*', (req, res, next) => {
+    next(new AppError(`Không tìm thấy đường dẫn ${req.originalUrl} trên server này!`, 404));
 });
 
 // Middleware xử lý lỗi tập trung
@@ -72,6 +66,15 @@ app.use(errorHandler);
 
 // 8. Khởi động Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`🚀 Server đang chạy trên port ${PORT} ở môi trường ${process.env.NODE_ENV}`);
+});
+
+// (Nâng cao) Xử lý các lỗi chưa được bắt và tắt server an toàn
+process.on('unhandledRejection', (err) => {
+    console.error('💥 UNHANDLED REJECTION! Đang tắt server...');
+    console.error(err.name, err.message);
+    server.close(() => {
+        process.exit(1);
+    });
 });

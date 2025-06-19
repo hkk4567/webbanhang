@@ -1,67 +1,60 @@
-// src/models/user.model.js
+// src/models/user.model.js - PHIÊN BẢN SỬA LỖI VÀ CHẮC CHẮN HOẠT ĐỘNG
 
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { DataTypes, Model } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const sequelize = require('../config/database');
 
-const User = sequelize.define('User', {
+class User extends Model {
+    /**
+     * Phương thức kiểm tra mật khẩu.
+     * @param {string} candidatePassword - Mật khẩu người dùng gửi lên.
+     * @returns {Promise<boolean>} - Trả về true nếu mật khẩu đúng.
+     */
+    async correctPassword(candidatePassword) {
+        // `this.password` là mật khẩu đã được hash trong DB
+        return bcrypt.compare(candidatePassword, this.password);
+    }
+}
+
+User.init({
     // ---- Khóa chính ----
     id: {
-        type: DataTypes.INTEGER.UNSIGNED, // Thêm UNSIGNED để khớp với DB
+        type: DataTypes.INTEGER.UNSIGNED,
         autoIncrement: true,
         primaryKey: true,
     },
-
     // ---- Thông tin cá nhân ----
     fullName: {
-        type: DataTypes.STRING(100), // Thêm độ dài để khớp với VARCHAR(100)
+        type: DataTypes.STRING(100),
         allowNull: false,
-        field: 'full_name' // Ánh xạ tới cột full_name trong DB
+        field: 'full_name',
     },
     email: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        unique: {
-            name: 'users_email_unique', // Đặt tên cho ràng buộc unique
-            msg: 'Email này đã được sử dụng.' // Thông báo lỗi tùy chỉnh
-        },
+        unique: true,
         validate: {
-            isEmail: {
-                msg: 'Vui lòng nhập một địa chỉ email hợp lệ.'
-            }
+            isEmail: true,
         },
     },
     phone: {
         type: DataTypes.STRING(20),
-        allowNull: true, // Cho phép để trống
-        unique: {
-            name: 'users_phone_unique',
-            msg: 'Số điện thoại này đã được sử dụng.'
-        }
+        allowNull: true,
+        unique: true,
     },
-
-    // ---- Địa chỉ mặc định ----
+    // ---- Địa chỉ ----
     streetAddress: {
         type: DataTypes.STRING(255),
         allowNull: true,
-        field: 'street_address'
+        field: 'street_address',
     },
-    ward: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-    },
-    district: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-    },
-    province: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-    },
+    ward: { type: DataTypes.STRING(100), allowNull: true },
+    district: { type: DataTypes.STRING(100), allowNull: true },
+    province: { type: DataTypes.STRING(100), allowNull: true },
 
     // ---- Bảo mật & Phân quyền ----
     password: {
-        type: DataTypes.STRING(255), // Độ dài 255 để khớp với cột DB
+        type: DataTypes.STRING,
         allowNull: false,
     },
     role: {
@@ -74,52 +67,33 @@ const User = sequelize.define('User', {
         allowNull: false,
         defaultValue: 'active',
     },
-
-    // createdAt và updatedAt sẽ được Sequelize quản lý tự động
-    // createdAt: {
-    //   type: DataTypes.DATE,
-    //   field: 'created_at'
-    // },
-    // updatedAt: {
-    //   type: DataTypes.DATE,
-    //   field: 'updated_at'
-    // }
-
 }, {
-    // ---- Tùy chọn cho Model ----
+    sequelize,
+    modelName: 'User',
     tableName: 'users',
-    timestamps: true, // Bật timestamps (created_at, updated_at)
-    underscored: true, // Sử dụng snake_case cho các cột tự động (createdAt -> created_at)
+    timestamps: true,
+    underscored: true,
 
-    // ---- Hooks (Hành động tự động) ----
-    hooks: {
-        beforeCreate: async (user) => {
-            if (user.password) {
-                const salt = await bcrypt.genSalt(10);
-                user.password = await bcrypt.hash(user.password, salt);
-            }
+    // Mặc định không trả về mật khẩu
+    defaultScope: {
+        attributes: { exclude: ['password'] },
+    },
+    scopes: {
+        // Scope để lấy mật khẩu khi cần (lúc đăng nhập)
+        withPassword: {
+            attributes: { include: [] }, // Bao gồm tất cả các trường
         },
-        beforeUpdate: async (user) => {
+    },
+
+    hooks: {
+        // Tự động hash mật khẩu trước khi lưu
+        beforeSave: async (user, options) => {
             if (user.changed('password')) {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(user.password, salt);
             }
-        }
-    },
-
-    // ---- Scopes (Tùy chọn) ----
-    // Định nghĩa các "scope" để tái sử dụng các câu query phức tạp
-    // Ví dụ: một scope để loại bỏ mật khẩu khi truy vấn
-    scopes: {
-        // Mặc định sẽ luôn loại bỏ trường password
-        defaultScope: {
-            attributes: { exclude: ['password'] },
         },
-        // Một scope khác để lấy cả password (ví dụ khi cần xác thực đăng nhập)
-        withPassword: {
-            attributes: { include: ['password'] },
-        }
-    }
+    },
 });
 
 module.exports = User;
