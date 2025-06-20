@@ -12,8 +12,7 @@ import { useAdminAuth } from '../../../../context/AdminAuthContext';
 const cx = classNames.bind(styles);
 
 function AdminHeader({ onToggleSidebar }) {
-    const { admin, adminLogout } = useAdminAuth();
-
+    const { adminUser, adminLogout } = useAdminAuth();
     return (
         // Áp dụng các class utility của Bootstrap
         <Navbar
@@ -64,8 +63,8 @@ function AdminHeader({ onToggleSidebar }) {
 
                         <Dropdown.Menu className={cx('user-dropdown-menu')}>
                             <div className="text-center px-3 pt-2 pb-3">
-                                <h6 className="mb-1 fw-bold">{admin ? admin.fullName : 'Admin User'}</h6>
-                                <small className="text-muted">{admin ? admin.email : 'admin@example.com'}</small>
+                                <h6 className="mb-1 fw-bold">{adminUser ? adminUser.fullName : 'Admin User'}</h6>
+                                <small className="text-muted">{adminUser ? adminUser.email : 'admin@example.com'}</small>
                             </div>
                             <Dropdown.Divider className="mx-2" />
                             {/* Sử dụng class custom đã định nghĩa */}

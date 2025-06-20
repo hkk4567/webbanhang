@@ -1,84 +1,82 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+// Import các hàm API
+import { loginApi, logoutApi, getMeApi } from '../services/apiService';
 
-// Tạo context
-const AdminAuthContext = createContext(null);
+const AdminAuthContext = createContext();
 
-// Hàm helper để lấy thông tin admin từ sessionStorage
-const getAdminFromStorage = () => {
-    const adminData = sessionStorage.getItem('adminUser');
-    try {
-        // Nếu có dữ liệu, phân tích nó từ JSON, ngược lại trả về null
-        return adminData ? JSON.parse(adminData) : null;
-    } catch (error) {
-        console.error("Failed to parse admin data from storage", error);
-        return null;
-    }
-};
+export function useAdminAuth() {
+    return useContext(AdminAuthContext);
+}
 
-// Provider component
 export function AdminAuthProvider({ children }) {
-    // State để lưu thông tin của admin đang đăng nhập (hoặc null)
-    // Khởi tạo state bằng cách đọc từ sessionStorage
-    const [adminUser, setAdminUser] = useState(getAdminFromStorage());
+    const [adminUser, setAdminUser] = useState(null);
+    const [loading, setLoading] = useState(true); // Thêm state loading để kiểm tra session lúc đầu
 
-    // --- LOGIC XÁC THỰC ADMIN ---
-    const adminLogin = (email, password) => {
-        // Trong thực tế, đây là nơi bạn sẽ gọi API
-        // POST /api/admin/login với body là { email, password }
+    // Kiểm tra xem có session đăng nhập còn hợp lệ không khi tải lại trang
+    useEffect(() => {
+        const checkLoggedIn = async () => {
+            try {
+                // Thử gọi API /users/me, API này được bảo vệ
+                const response = await getMeApi();
+                // Nếu thành công, user là admin/staff và lưu thông tin
+                const user = response.data.data.user;
+                if (user.role === 'admin' || user.role === 'staff') {
+                    setAdminUser(user);
+                }
+            } catch (error) {
+                // Nếu lỗi (401 Unauthorized), nghĩa là chưa đăng nhập
+                setAdminUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        // --- Giả lập logic xác thực ---
-        const ADMIN_EMAIL = 'admin@example.com';
-        const ADMIN_PASSWORD = '123456'; // Lấy từ .env trong thực tế
+        checkLoggedIn();
+    }, []);
 
-        // Kiểm tra thông tin đăng nhập
-        if (email.toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-            // Tạo đối tượng thông tin admin để lưu trữ
-            const adminData = {
-                email: ADMIN_EMAIL,
-                name: 'Admin Manager', // Hoặc lấy từ API trả về
-                role: 'admin',
-            };
 
-            // Lưu thông tin vào sessionStorage dưới dạng chuỗi JSON
-            sessionStorage.setItem('adminUser', JSON.stringify(adminData));
+    const adminLogin = async (email, password) => {
+        // Hàm login bây giờ sẽ là một hàm async và trả về dữ liệu hoặc ném ra lỗi
+        const response = await loginApi(email, password);
+        const user = response.data.data.user;
 
-            // Cập nhật state
-            setAdminUser(adminData);
-
-            return true; // Báo hiệu đăng nhập thành công
+        // KIỂM TRA QUYỀN: Chỉ cho phép admin hoặc staff đăng nhập trang quản trị
+        if (user.role !== 'admin' && user.role !== 'staff') {
+            // Ném ra một lỗi tùy chỉnh để component có thể bắt được
+            const error = new Error('Tài khoản của bạn không có quyền truy cập trang quản trị.');
+            error.name = 'AuthorizationError';
+            // Gọi API logout để xóa cookie vừa được tạo
+            await logoutApi();
+            throw error;
         }
 
-        return false; // Báo hiệu đăng nhập thất bại
+        // Nếu đăng nhập và phân quyền thành công, cập nhật state
+        setAdminUser(user);
+        return user; // Trả về thông tin user
     };
 
-    const adminLogout = () => {
-        // Xóa thông tin khỏi sessionStorage
-        sessionStorage.removeItem('adminUser');
-        // Reset state
-        setAdminUser(null);
+    const adminLogout = async () => {
+        try {
+            await logoutApi();
+        } catch (error) {
+            console.error("Lỗi khi đăng xuất:", error);
+            // Dù API có lỗi, vẫn xóa thông tin user ở client
+        } finally {
+            setAdminUser(null);
+        }
     };
 
-    // Tạo giá trị cho context
-    // `isAdminLoggedIn` giờ sẽ là một giá trị được tính toán dựa trên `adminUser`
     const value = {
         adminUser,
-        isAdminLoggedIn: !!adminUser, // Chuyển đổi object thành boolean
+        loading,
         adminLogin,
         adminLogout,
     };
 
+    // Chỉ render children khi đã kiểm tra xong session
     return (
         <AdminAuthContext.Provider value={value}>
-            {children}
+            {!loading && children}
         </AdminAuthContext.Provider>
     );
-}
-
-// Hook tùy chỉnh để sử dụng context
-export function useAdminAuth() {
-    const context = useContext(AdminAuthContext);
-    if (context === null) {
-        throw new Error('useAdminAuth must be used within an AdminAuthProvider');
-    }
-    return context;
 }

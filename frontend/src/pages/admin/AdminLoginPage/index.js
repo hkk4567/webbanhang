@@ -28,20 +28,26 @@ function AdminLoginPage() {
         setError('');
         setIsLoading(true);
 
-        // Giả lập một yêu cầu mạng (trong thực tế, đây là lúc gọi API)
-        await new Promise(resolve => setTimeout(resolve, 500));
-
         try {
-            // Cập nhật hàm login để chấp nhận email và password
-            const loginSuccess = adminLogin(credentials.email, credentials.password);
+            // Bây giờ adminLogin là một hàm async thực sự
+            // Nó sẽ trả về user data nếu thành công, hoặc ném ra lỗi nếu thất bại
+            await adminLogin(credentials.email, credentials.password);
 
-            if (loginSuccess) {
-                navigate('/admin/dashboard');
-            } else {
-                setError('Email hoặc mật khẩu không chính xác.');
-            }
+            // Nếu không có lỗi nào được ném ra, điều hướng đến dashboard
+            navigate('/admin/dashboard');
+
         } catch (err) {
-            setError('Đã xảy ra lỗi. Vui lòng thử lại.');
+            // Xử lý các loại lỗi khác nhau
+            if (err.name === 'AuthorizationError') {
+                // Lỗi phân quyền do context ném ra
+                setError(err.message);
+            } else if (err.response && err.response.data) {
+                // Lỗi từ API của axios (ví dụ: 401 Unauthorized, 400 Bad Request)
+                setError(err.response.data.message || 'Email hoặc mật khẩu không chính xác.');
+            } else {
+                // Các lỗi mạng khác
+                setError('Đã xảy ra lỗi mạng. Vui lòng thử lại.');
+            }
         } finally {
             setIsLoading(false);
         }

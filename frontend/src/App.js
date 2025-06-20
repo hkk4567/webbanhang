@@ -4,9 +4,9 @@ import { publicRoutes, privateRoutes, adminRoutes } from './routes'
 import { DefaultLayout } from './components/layout'
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
-import PrivateRoute from './components/common/PrivateRoute'; // Import PrivateRoute
+import PrivateRoute from './components/routes/PrivateRoute'; // Import PrivateRoute
 import { CartProvider } from './context/CartContext';
-import AdminPrivateRoute from './components/AdminPrivateRoute';
+import AdminRoute from './components/routes/AdminRoute'; // Import AdminRoute
 function App() {
   return (
     <AuthProvider>
@@ -58,12 +58,12 @@ function App() {
                     </Layout>
                   );
 
-                  // Nếu route được đánh dấu là private, bọc nó bằng AdminPrivateRoute
+                  // Nếu route được đánh dấu là private, bọc nó bằng AdminRoute
                   if (route.isPrivate) {
                     element = (
-                      <AdminPrivateRoute>
+                      <AdminRoute>
                         {element}
-                      </AdminPrivateRoute>
+                      </AdminRoute>
                     );
                   }
 
