@@ -9,6 +9,7 @@ const authRoute = require('./auth.route');     // Ví dụ khi có thêm route c
 const productRoute = require('./product.route');
 const cartRoute = require('./cart.route');
 const orderRoute = require('./order.route');
+const categoryRoute = require('./category.route');
 // Định nghĩa các đường dẫn gốc cho từng loại route
 // Tất cả các route trong user.route.js sẽ có tiền tố là '/api/users'
 router.use('/users', userRoute);
@@ -16,5 +17,6 @@ router.use('/auth', authRoute);
 router.use('/products', productRoute);
 router.use('/cart', cartRoute);
 router.use('/orders', orderRoute);
+router.use('/categories', categoryRoute);
 
 module.exports = router;

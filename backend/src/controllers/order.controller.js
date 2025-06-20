@@ -129,3 +129,63 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         },
     });
 });
+// === CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG (Dành cho Admin/Staff) ===
+exports.updateOrderStatus = catchAsync(async (req, res, next) => {
+    const { id } = req.params; // Lấy ID của đơn hàng từ URL
+    const { status } = req.body; // Lấy trạng thái mới từ body request
+
+    // 1. Kiểm tra xem status có được gửi lên và có hợp lệ không
+    const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!status || !allowedStatuses.includes(status)) {
+        return next(new AppError('Vui lòng cung cấp một trạng thái hợp lệ: pending, processing, shipped, delivered, cancelled.', 400));
+    }
+
+    // 2. Tìm đơn hàng trong DB
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+        return next(new AppError('Không tìm thấy đơn hàng với ID này.', 404));
+    }
+
+    // 3. (Nâng cao) Logic kiểm tra chuyển đổi trạng thái hợp lệ (tùy chọn)
+    // Ví dụ: không cho phép cập nhật khi đơn hàng đã giao hoặc đã hủy
+    if (order.status === 'delivered' || order.status === 'cancelled') {
+        return next(new AppError(`Không thể cập nhật trạng thái của đơn hàng đã ${order.status}.`, 400));
+    }
+    // Ví dụ: không cho phép quay lại trạng thái 'pending' từ các trạng thái sau đó
+    if (status === 'pending' && order.status !== 'pending') {
+        return next(new AppError('Không thể chuyển trạng thái về lại "pending".', 400));
+    }
+
+
+    // 4. Cập nhật trạng thái và lưu lại
+    order.status = status;
+    await order.save();
+
+    // TODO: Gửi email/thông báo cho khách hàng tại đây
+
+    // 5. Trả về kết quả
+    res.status(200).json({
+        status: 'success',
+        message: 'Cập nhật trạng thái đơn hàng thành công.',
+        data: {
+            order,
+        },
+    });
+});
+
+// Các hàm khác như getMyOrders, getAllOrders...
+exports.getAllOrders = catchAsync(async (req, res, next) => {
+    const orders = await Order.findAll({
+        // Sắp xếp các đơn hàng mới nhất lên đầu
+        order: [['created_at', 'DESC']]
+    });
+
+    res.status(200).json({
+        status: 'success',
+        results: orders.length,
+        data: {
+            orders
+        }
+    });
+});
