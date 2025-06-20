@@ -3,6 +3,7 @@
 const express = require('express');
 // SỬA LẠI DÒNG NÀY: THÊM .js VÀO CUỐI
 const userController = require('../controllers/user.controller.js');
+const authMiddleware = require('../middlewares/auth.middleware.js');
 const router = express.Router();
 
 // [POST] /api/users/register -> Đăng ký tài khoản mới.
@@ -10,10 +11,14 @@ const router = express.Router();
 // Nhưng vì trong index.js đã là /users, nên route này sẽ là /api/users/
 // Tôi đổi lại thành /register để đúng với ý đồ ban đầu của bạn
 router.post('/register', userController.createUser);
-
+// Middleware `protect` sẽ được áp dụng cho tất cả các route bên dưới nó.
+router.use(authMiddleware.protect);
+router.get('/me', userController.getMe, userController.getUserById);
 // [GET] /api/users -> Lấy danh sách tất cả người dùng
 router.get('/', userController.getAllUsers);
 
+// --- CÁC ROUTE CHỈ DÀNH CHO ADMIN ---
+router.use(authMiddleware.restrictTo('admin'));
 // Nhóm các route có cùng đường dẫn '/:id' lại với nhau cho gọn
 router
     .route('/:id')

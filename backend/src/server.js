@@ -5,6 +5,7 @@ require('dotenv').config();
 
 // 2. Import các thư viện và module cần thiết
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const morgan = require('morgan'); // Thêm morgan để log request
 const helmet = require('helmet'); // Thêm helmet để tăng cường bảo mật
@@ -35,7 +36,7 @@ if (process.env.NODE_ENV === 'development') {
 // Middleware để đọc dữ liệu JSON và URL-encoded từ body của request
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cookieParser());
 // 5. Kết nối Database
 (async () => {
     try {
