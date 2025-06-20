@@ -2,7 +2,7 @@
 
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+const { User } = require('../models');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync'); // Dùng lại catchAsync nếu có
 
@@ -61,6 +61,42 @@ exports.protect = catchAsync(async (req, res, next) => {
     res.locals.user = currentUser;
 
     next(); // Nếu mọi thứ đều ổn, đi đến middleware/controller tiếp theo
+});
+
+// Middleware này giống hệt `protect`, nhưng nếu không có token, nó chỉ đơn giản là next()
+// mà không báo lỗi. Điều này cho phép các route sau đó kiểm tra `if (req.user)`...
+exports.checkUser = catchAsync(async (req, res, next) => {
+    // 1) Lấy token
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies.jwt) {
+        token = req.cookies.jwt;
+    }
+
+    // Nếu không có token, cứ đi tiếp
+    if (!token) {
+        return next();
+    }
+
+    try {
+        // 2) Xác thực token
+        const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+        // 3) Tìm user
+        const currentUser = await User.findByPk(decoded.id);
+        if (!currentUser) {
+            return next();
+        }
+
+        // 4) Gắn user vào request
+        req.user = currentUser;
+        res.locals.user = currentUser;
+        next();
+    } catch (err) {
+        // Nếu token không hợp lệ, cũng cứ đi tiếp
+        return next();
+    }
 });
 
 exports.restrictTo = (...roles) => {

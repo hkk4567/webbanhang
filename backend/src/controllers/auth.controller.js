@@ -1,7 +1,7 @@
 // src/controllers/auth.controller.js
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+const { User } = require('../models');
 const AppError = require('../utils/appError'); // Bạn nên có file này để tạo lỗi chuẩn hóa
 
 /**
