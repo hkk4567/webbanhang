@@ -10,7 +10,7 @@ const cors = require('cors');
 const morgan = require('morgan'); // Thêm morgan để log request
 const helmet = require('helmet'); // Thêm helmet để tăng cường bảo mật
 const sequelize = require('./config/database');
-
+require('./config/redis');    // Kết nối Redis
 // Import các Routes
 const mainRoutes = require('./routes');
 // const productRoutes = require('./routes/product.route'); // Ví dụ thêm route khác
