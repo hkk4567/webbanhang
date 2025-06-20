@@ -26,7 +26,15 @@ const app = express();
 app.use(helmet());
 
 // Cho phép các request từ các domain khác (cấu hình cho an toàn hơn trong production)
-app.use(cors());
+const corsOptions = {
+    // Chỉ định chính xác origin của frontend mà bạn muốn cho phép
+    origin: 'http://localhost:3000',
+    // Cho phép gửi credentials (cookie, headers authorization)
+    credentials: true,
+};
+
+// Sử dụng cấu hình cors đã được định nghĩa
+app.use(cors(corsOptions));
 
 // Log các HTTP request ra console (chỉ trong môi trường development)
 if (process.env.NODE_ENV === 'development') {
