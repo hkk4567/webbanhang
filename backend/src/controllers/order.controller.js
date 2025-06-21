@@ -1,6 +1,7 @@
 const { Order, OrderItem, Product, User, Category } = require('../models');
 const redisClient = require('../config/redis');
 const sequelize = require('../config/database');
+const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
@@ -176,16 +177,90 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
 
 // Các hàm khác như getMyOrders, getAllOrders...
 exports.getAllOrders = catchAsync(async (req, res, next) => {
-    const orders = await Order.findAll({
-        // Sắp xếp các đơn hàng mới nhất lên đầu
-        order: [['created_at', 'DESC']]
+    // 1. Phân trang
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    // 2. Lọc và Tìm kiếm
+    const { search, status, startDate, endDate, province, district, ward } = req.query;
+    const whereCondition = {};
+
+    if (status) {
+        whereCondition.status = status;
+    }
+    if (startDate && endDate) {
+        whereCondition.createdAt = {
+            [Op.between]: [new Date(startDate), new Date(new Date(endDate).setHours(23, 59, 59, 999))]
+        };
+    }
+    if (search) {
+        whereCondition[Op.or] = [
+            { id: { [Op.like]: `%${search}%` } }, // Tìm theo ID đơn hàng
+            { shippingName: { [Op.like]: `%${search}%` } },
+            { shippingPhone: { [Op.like]: `%${search}%` } }
+        ];
+    }
+    if (province) {
+        whereCondition.shippingProvince = province;
+    }
+    if (district) {
+        whereCondition.shippingDistrict = district;
+    }
+    if (ward) {
+        whereCondition.shippingWard = ward;
+    }
+
+    // 3. Sắp xếp
+    const sortBy = req.query.sort || '-created_at';
+    const orderDirection = sortBy.startsWith('-') ? 'DESC' : 'ASC';
+    const orderField = sortBy.startsWith('-') ? sortBy.substring(1) : sortBy;
+
+    // 4. Query
+    const { count, rows } = await Order.findAndCountAll({
+        where: whereCondition,
+        // (Tùy chọn) Include để lấy tên user nếu cần
+        // include: [{ model: User, as: 'user', attributes: ['fullName'] }],
+        limit,
+        offset,
+        order: [[orderField, orderDirection]],
+        distinct: true,
     });
 
+    // 5. Trả về kết quả
     res.status(200).json({
         status: 'success',
-        results: orders.length,
         data: {
-            orders
-        }
+            orders: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+            },
+        },
     });
+});
+
+// Hàm updateOrderStatus của bạn đã có, chúng ta sẽ dùng lại nó.
+// Cần thêm hàm getOrderById để xem chi tiết
+exports.getOrderById = catchAsync(async (req, res, next) => {
+    const order = await Order.findByPk(req.params.id, {
+        // Include cả OrderItem, và từ OrderItem include cả Product
+        include: [{
+            model: OrderItem,
+            as: 'items', // Phải khớp với 'as' trong association
+            include: [{
+                model: Product,
+                as: 'product',
+                attributes: ['name', 'imageUrl'] // Chỉ lấy các trường cần thiết
+            }]
+        }]
+    });
+    if (!order) {
+        return next(new AppError('Không tìm thấy đơn hàng', 404));
+    }
+    if (order.userId !== req.user.id && req.user.role === 'customer') {
+        return next(new AppError('Bạn không có quyền xem đơn hàng này.', 403));
+    }
+    res.status(200).json({ status: 'success', data: { order } });
 });

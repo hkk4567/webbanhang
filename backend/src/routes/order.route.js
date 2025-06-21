@@ -9,6 +9,11 @@ router.use(protect);
 // API để tạo đơn hàng mới
 router.post('/', orderController.createOrder);
 
+// [GET] /api/orders/:id -> Lấy chi tiết một đơn hàng CỦA CHÍNH MÌNH
+// Logic kiểm tra chủ sở hữu đơn hàng sẽ nằm trong controller
+router.get('/:id', orderController.getOrderById);
+
+
 // --- CÁC ROUTE CỦA ADMIN/STAFF ---
 
 // Lấy tất cả đơn hàng (chỉ admin/staff được xem)
