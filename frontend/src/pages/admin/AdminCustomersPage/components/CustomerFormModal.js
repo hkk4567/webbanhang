@@ -4,14 +4,22 @@ import AddressSelector from '../../../../components/common/AddressSelector';
 
 // Thêm các trường mới vào trạng thái ban đầu
 const initialState = {
-    name: '', email: '', phone: '', address: '', city: '', district: '', ward: '',
-    password: '', confirmPassword: '', type: ''
+    fullName: '',       // Sửa từ 'name'
+    email: '',
+    phone: '',
+    role: 'customer',   // Sửa từ 'type' và đặt giá trị mặc định
+    streetAddress: '',  // Sửa từ 'address'
+    ward: '',
+    district: '',
+    province: '',
+    password: '',
+    confirmPassword: '',
 };
 
 function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
     const [formData, setFormData] = useState(initialState);
     const [isEditing, setIsEditing] = useState(false);
-
+    const [passwordError, setPasswordError] = useState('');
     useEffect(() => {
         // Xác định chế độ "Sửa" hay "Thêm"
         const editing = !!customerToEdit;
@@ -19,19 +27,16 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
 
         if (editing) {
             setFormData({
-                // Giữ lại các trường cũ
-                name: customerToEdit.name || '',
+                fullName: customerToEdit.fullName || '',
                 email: customerToEdit.email || '',
                 phone: customerToEdit.phone || '',
-                address: customerToEdit.address || '',
-                city: customerToEdit.city || '',
-                district: customerToEdit.district || '',
+                role: customerToEdit.role || 'customer',
+                streetAddress: customerToEdit.streetAddress || '',
                 ward: customerToEdit.ward || '',
-                // Không điền mật khẩu vào form khi sửa
-                password: '',
+                district: customerToEdit.district || '',
+                province: customerToEdit.province || '',
+                password: '', // Luôn để trống mật khẩu khi sửa
                 confirmPassword: '',
-                // Có thể thêm trường type nếu cần sửa
-                type: customerToEdit.type || '',
             });
         } else {
             // Reset toàn bộ form khi ở chế độ "Thêm mới"
@@ -39,33 +44,52 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
         }
     }, [customerToEdit, show]);
 
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        // Xóa lỗi mật khẩu khi người dùng bắt đầu nhập lại
+        if (e.target.name === 'password' || e.target.name === 'confirmPassword') {
+            setPasswordError('');
+        }
     };
 
     const handleAddressChange = (addressData) => {
         setFormData(prev => ({
             ...prev,
-            city: addressData.city,
+            province: addressData.city, // Giả sử AddressSelector trả về 'city'
             district: addressData.district,
             ward: addressData.ward,
         }));
     };
 
     const handleSaveClick = () => {
-        // Validate mật khẩu khi thêm mới
+        // --- BƯỚC 3: Validate dữ liệu và chuẩn bị gửi đi ---
+        // Validate mật khẩu chỉ khi thêm mới
         if (!isEditing && formData.password !== formData.confirmPassword) {
-            alert('Mật khẩu nhập lại không khớp. Vui lòng kiểm tra lại.');
+            setPasswordError('Mật khẩu nhập lại không khớp.');
             return;
         }
 
-        // Tạo một object dữ liệu để gửi đi, loại bỏ confirmPassword
-        const dataToSave = { ...formData };
-        delete dataToSave.confirmPassword;
+        // Tạo một object dữ liệu để gửi đi
+        const dataToSave = {
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            role: formData.role,
+            streetAddress: formData.streetAddress,
+            ward: formData.ward,
+            district: formData.district,
+            province: formData.province,
+        };
+        console.log('Data to save:', dataToSave);
 
+        // Chỉ thêm mật khẩu vào object nếu nó được nhập (khi thêm mới)
+        if (!isEditing && formData.password) {
+            dataToSave.password = formData.password;
+        }
+
+        // Gọi hàm onSave từ component cha với dữ liệu đã chuẩn hóa
         onSave({ ...dataToSave, id: customerToEdit?.id });
-        handleClose();
+        // Không cần gọi handleClose ở đây, component cha sẽ làm điều đó
     };
 
     return (
@@ -78,18 +102,16 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
                     <Row>
                         {/* Các trường thông tin cơ bản */}
                         <Col md={6}><Form.Group className="mb-3"><Form.Label>ID</Form.Label><Form.Control type="text" value={customerToEdit?.id || 'Tự động'} disabled /></Form.Group></Col>
-                        <Col md={6}><Form.Group className="mb-3"><Form.Label>Họ và tên</Form.Label><Form.Control type="text" name="name" value={formData.name} onChange={handleChange} required /></Form.Group></Col>
+                        <Col md={6}><Form.Group className="mb-3"><Form.Label>Họ và tên</Form.Label><Form.Control type="text" name="fullName" value={formData.fullName} onChange={handleChange} required /></Form.Group></Col>
                         <Col md={6}><Form.Group className="mb-3"><Form.Label>Email</Form.Label><Form.Control type="email" name="email" value={formData.email} onChange={handleChange} disabled={isEditing} required /></Form.Group></Col>
                         <Col md={6}><Form.Group className="mb-3"><Form.Label>Số điện thoại</Form.Label><Form.Control type="tel" name="phone" value={formData.phone} onChange={handleChange} /></Form.Group></Col>
                         <Col md={12}>
                             <Form.Group className="mb-3">
                                 <Form.Label>Loại tài khoản</Form.Label>
-                                <Form.Select name="type" value={formData.type} onChange={handleChange} required>
-                                    <option value="" disabled>-- Chọn loại tài khoản --</option>
-                                    <option value="Thường">Thường</option>
-                                    <option value="Thân thiết">Thân thiết</option>
-                                    <option value="VIP">VIP</option>
-                                    <option value="Admin">Admin (Tài khoản quản trị)</option>
+                                <Form.Select name="role" value={formData.role} onChange={handleChange} required>
+                                    <option value="customer">Customer</option>
+                                    <option value="staff">Staff</option>
+                                    <option value="admin">Admin</option>
                                 </Form.Select>
                             </Form.Group>
                         </Col>
@@ -99,27 +121,30 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
                                 <Col md={6}>
                                     <Form.Group className="mb-3">
                                         <Form.Label>Mật khẩu</Form.Label>
-                                        <Form.Control type="password" name="password" placeholder="Nhập mật khẩu" value={formData.password} onChange={handleChange} required />
+                                        <Form.Control type="password" name="password" placeholder="Nhập mật khẩu" value={formData.password} onChange={handleChange} required isInvalid={!!passwordError} />
                                     </Form.Group>
                                 </Col>
                                 <Col md={6}>
                                     <Form.Group className="mb-3">
                                         <Form.Label>Nhập lại mật khẩu</Form.Label>
-                                        <Form.Control type="password" name="confirmPassword" placeholder="Nhập lại mật khẩu" value={formData.confirmPassword} onChange={handleChange} required />
+                                        <Form.Control type="password" name="confirmPassword" placeholder="Nhập lại mật khẩu" value={formData.confirmPassword} onChange={handleChange} required isInvalid={!!passwordError} />
+                                        <Form.Control.Feedback type="invalid">
+                                            {passwordError}
+                                        </Form.Control.Feedback>
                                     </Form.Group>
                                 </Col>
                             </>
                         )}
-                        <Col xs={12}><Form.Group className="mb-3"><Form.Label>Địa chỉ (Số nhà, tên đường)</Form.Label><Form.Control type="text" name="address" value={formData.address} onChange={handleChange} /></Form.Group></Col>
+                        <Col xs={12}><Form.Group className="mb-3"><Form.Label>Địa chỉ (Số nhà, tên đường)</Form.Label><Form.Control type="text" name="streetAddress" value={formData.streetAddress} onChange={handleChange} /></Form.Group></Col>
+                        {/* Component AddressSelector */}
+                        <AddressSelector
+                            onChange={handleAddressChange}
+                            // Dùng key để reset AddressSelector khi đổi giữa các khách hàng
+                            key={customerToEdit?.id || 'new-customer'}
+                            initialValue={isEditing ? { city: formData.province, district: formData.district, ward: formData.ward } : null}
+                        />
                     </Row>
 
-                    {/* Component AddressSelector */}
-                    <AddressSelector
-                        onChange={handleAddressChange}
-                        // Dùng key để reset AddressSelector khi đổi giữa các khách hàng
-                        key={customerToEdit?.id || 'new-customer'}
-                        initialValue={isEditing ? { city: formData.city, district: formData.district, ward: formData.ward } : null}
-                    />
                 </Form>
             </Modal.Body>
             <Modal.Footer>
