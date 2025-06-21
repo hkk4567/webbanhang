@@ -10,17 +10,15 @@ const router = express.Router();
 // [GET] /api/products -> Lấy danh sách tất cả sản phẩm đang bán
 router.get('/', authMiddleware.checkUser, productController.getAllProducts);
 
-// [GET] /api/products/:id -> Lấy thông tin chi tiết một sản phẩm
-router.get('/:id', authMiddleware.checkUser, productController.getProductById);
-
 // --- CÁC ROUTE CỦA ADMIN ---
-router.use(authMiddleware.protect, authMiddleware.restrictTo('admin'));
-
+router.use(authMiddleware.protect, authMiddleware.restrictTo('admin', 'staff'));
+router.get('/admin', productController.getAllProducts);
 // Thêm sản phẩm mới (chấp nhận 1 file ảnh có field name là 'image')
 router.post('/', upload.single('image'), productController.createProduct);
 
 
 router.route('/:id')
+    .get(authMiddleware.checkUser, productController.getProductById)
     .patch(upload.single('image'), productController.updateProduct) // Cập nhật cũng có thể có ảnh
     .delete(productController.deleteProduct);
 

@@ -57,9 +57,6 @@ exports.protect = catchAsync(async (req, res, next) => {
     // Gắn thông tin người dùng đã được xác thực vào đối tượng `req`
     // để các middleware hoặc controller sau đó có thể sử dụng.
     req.user = currentUser;
-    // Đôi khi bạn cũng muốn lưu thông tin này vào res.locals để template engine có thể dùng
-    res.locals.user = currentUser;
-
     next(); // Nếu mọi thứ đều ổn, đi đến middleware/controller tiếp theo
 });
 

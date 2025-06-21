@@ -10,53 +10,117 @@ const removeDiacritics = (str) => {
 };
 
 // === LẤY DANH SÁCH TẤT CẢ SẢN PHẨM ===
+// src/controllers/product.controller.js
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-    // 1. Phân trang
+    // 1. LẤY CÁC THAM SỐ TỪ QUERY
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const offset = (page - 1) * limit;
+    let limit = parseInt(req.query.limit, 10);
 
-    // 2. Lọc và Tìm kiếm
-    const { search, categoryId, status } = req.query;
+    // Dùng destructuring để lấy các tham số, kể cả khi chúng là undefined
+    const {
+        search,
+        categoryId,
+        status,
+        price_ranges,
+        sort,
+    } = req.query;
+
+    // 2. XÂY DỰNG ĐIỀU KIỆN `WHERE` VÀ CÁC TÙY CHỌN
     const whereCondition = {};
+    const options = {
+        include: [{
+            model: Category,
+            as: 'category',
+            attributes: ['id', 'name']
+        }],
+        distinct: true,
+    };
 
+    // --- LOGIC PHÂN QUYỀN VÀ PHÂN TRANG MẶC ĐỊNH ---
+    // Giả định req.user tồn tại nếu đã đăng nhập
+    const isAdminOrStaff = req.user && ['admin', 'staff'].includes(req.user.role);
+
+    if (isAdminOrStaff) {
+        limit = limit || 10;
+        if (status) {
+            whereCondition.status = status;
+        }
+    } else {
+        limit = limit || 9;
+        whereCondition.status = 'active'; // User luôn chỉ thấy sản phẩm active
+    }
+
+    options.limit = limit;
+    options.offset = (page - 1) * limit;
+
+    // --- LOGIC LỌC VÀ TÌM KIẾM ---
     if (search) {
-        removeDiacritics(search);
-        // Sequelize không hỗ trợ tìm kiếm không dấu trực tiếp,
-        // chúng ta sẽ dùng `LOWER` và `LIKE` cho tìm kiếm cơ bản.
-        // Tìm kiếm không dấu thực sự cần full-text search hoặc collation phù hợp.
+        // Dùng iLike cho PostgreSQL, LIKE cho các DB khác
         whereCondition.name = { [Op.like]: `%${search}%` };
     }
     if (categoryId) {
         whereCondition.categoryId = categoryId;
     }
-    if (status) {
-        // Giả sử status trong DB là 'active', 'inactive', 'out_of_stock'
-        // Frontend gửi 'Còn hàng', 'Hết hàng', ta cần chuyển đổi
-        if (status === 'active') whereCondition.status = 'active';
-        if (status === 'inactive') whereCondition.status = 'inactive';
-        if (status === 'out_of_stock') whereCondition.status = 'out_of_stock';
-        // 'Sắp hết hàng' cần logic phức tạp hơn, có thể xử lý sau
+
+    // --- LOGIC XỬ LÝ GIÁ (ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT) ---
+    const priceRanges = {
+        'under-100': { min: 0, max: 100000 },
+        '100-300': { min: 100000, max: 300000 },
+        '300-500': { min: 300000, max: 500000 },
+        'above-500': { min: 500000 }, // max là vô cực
+    };
+
+    if (price_ranges && Array.isArray(price_ranges) && price_ranges.length > 0) {
+        const orConditions = price_ranges.map(key => {
+            const range = priceRanges[key];
+            if (!range) return null; // Bỏ qua key không hợp lệ
+
+            const condition = {};
+            if (range.min != null) {
+                condition[Op.gte] = range.min;
+            }
+            if (range.max != null) {
+                condition[Op.lte] = range.max;
+            }
+            return { price: condition };
+        }).filter(Boolean); // Lọc ra các giá trị null
+
+        if (orConditions.length > 0) {
+            // Thêm điều kiện OR vào whereCondition
+            whereCondition[Op.or] = orConditions;
+        }
     }
 
-    // 3. Sắp xếp
-    const sortBy = req.query.sort || '-created_at';
-    const orderDirection = sortBy.startsWith('-') ? 'DESC' : 'ASC';
-    const orderField = sortBy.startsWith('-') ? sortBy.substring(1) : sortBy;
+    // 3. XÂY DỰNG ĐIỀU KIỆN SẮP XẾP (`ORDER`)
+    const sortBy = sort || '-created_at';
+    const sortMapping = {
+        'price-asc': [['price', 'ASC']],
+        'price-desc': [['price', 'DESC']],
+        'name-asc': [['name', 'ASC']],
+        'name-desc': [['name', 'DESC']],
+        'created_at': [['created_at', 'ASC']],
+        '-created_at': [['created_at', 'DESC']],
+        'status-asc': ['status', 'ASC'],
+        'status-desc': ['status', 'DESC'],
+        'quantity-asc': ['quantity', 'ASC'],
+        'quantity-desc': ['quantity', 'DESC'],
+    };
+    // Sửa đổi nhỏ: Sequelize v6+ yêu cầu order là một mảng của các mảng
+    options.order = sortMapping[sortBy] || sortMapping['-created_at'];
 
-    // 4. Query
+    // 4. THỰC HIỆN QUERY
+    console.log('--- Final `where` condition for Sequelize ---:', JSON.stringify(whereCondition, null, 2)); // Dòng debug quan trọng
+    console.log('--- EXECUTING WITH CONTROLLER VERSION 2.0 ---'); // Thêm dòng này
+    console.log('--- FINAL WHERE CLAUSE OBJECT ---:', JSON.stringify(whereCondition, null, 2));
     const { count, rows } = await Product.findAndCountAll({
         where: whereCondition,
-        include: [{ model: Category, as: 'category', attributes: ['name'] }],
-        limit,
-        offset,
-        order: [[orderField, orderDirection]],
-        distinct: true, // Cần thiết khi có include
+        ...options
     });
 
-    // 5. Trả về kết quả
+    // 5. TRẢ VỀ RESPONSE
     res.status(200).json({
         status: 'success',
+        results: rows.length,
         data: {
             products: rows,
             pagination: {
@@ -191,5 +255,3 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
         res.status(204).send(); // 204 No Content
     }
 });
-
-// Các hàm khác như getAllProducts, getProductById...
