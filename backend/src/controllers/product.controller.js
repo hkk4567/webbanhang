@@ -1,42 +1,69 @@
 // src/controllers/product.controller.js
 const { Product, OrderItem, Category } = require('../models'); // Giả sử bạn có file index.js trong models để quản lý
+const { Op } = require('sequelize');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const sequelize = require('../config/database');
 const { cloudinary } = require('../utils/cloudinary.js'); // Import cloudinary helper
+const removeDiacritics = (str) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+};
 
 // === LẤY DANH SÁCH TẤT CẢ SẢN PHẨM ===
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-    const whereClause = {};
+    // 1. Phân trang
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
 
-    // Mặc định: Người dùng thường chỉ thấy các sản phẩm 'active'.
-    // Nếu là admin, họ có thể xem tất cả bằng cách thêm query param ?status=all
-    // `req.user` được cung cấp bởi middleware `protect` (nếu có)
-    if (req.user && req.user.role === 'admin' && req.query.status === 'all') {
-        // Admin xem tất cả, không cần thêm điều kiện vào whereClause
-    } else {
-        // Người dùng thường chỉ thấy sản phẩm đang hoạt động
-        whereClause.status = 'active';
+    // 2. Lọc và Tìm kiếm
+    const { search, categoryId, status } = req.query;
+    const whereCondition = {};
+
+    if (search) {
+        removeDiacritics(search);
+        // Sequelize không hỗ trợ tìm kiếm không dấu trực tiếp,
+        // chúng ta sẽ dùng `LOWER` và `LIKE` cho tìm kiếm cơ bản.
+        // Tìm kiếm không dấu thực sự cần full-text search hoặc collation phù hợp.
+        whereCondition.name = { [Op.like]: `%${search}%` };
+    }
+    if (categoryId) {
+        whereCondition.categoryId = categoryId;
+    }
+    if (status) {
+        // Giả sử status trong DB là 'active', 'inactive', 'out_of_stock'
+        // Frontend gửi 'Còn hàng', 'Hết hàng', ta cần chuyển đổi
+        if (status === 'active') whereCondition.status = 'active';
+        if (status === 'inactive') whereCondition.status = 'inactive';
+        if (status === 'out_of_stock') whereCondition.status = 'out_of_stock';
+        // 'Sắp hết hàng' cần logic phức tạp hơn, có thể xử lý sau
     }
 
-    const products = await Product.findAll({
-        where: whereClause,
-        // Include để lấy cả thông tin danh mục liên quan
-        include: [{
-            model: Category,
-            as: 'category',
-            attributes: ['id', 'name'] // Chỉ lấy id và name của category
-        }],
-        order: [
-            ['created_at', 'DESC'] // Sắp xếp sản phẩm mới nhất lên đầu
-        ]
+    // 3. Sắp xếp
+    const sortBy = req.query.sort || '-created_at';
+    const orderDirection = sortBy.startsWith('-') ? 'DESC' : 'ASC';
+    const orderField = sortBy.startsWith('-') ? sortBy.substring(1) : sortBy;
+
+    // 4. Query
+    const { count, rows } = await Product.findAndCountAll({
+        where: whereCondition,
+        include: [{ model: Category, as: 'category', attributes: ['name'] }],
+        limit,
+        offset,
+        order: [[orderField, orderDirection]],
+        distinct: true, // Cần thiết khi có include
     });
 
+    // 5. Trả về kết quả
     res.status(200).json({
         status: 'success',
-        results: products.length,
         data: {
-            products,
+            products: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+            },
         },
     });
 });

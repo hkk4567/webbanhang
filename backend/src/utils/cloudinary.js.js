@@ -14,7 +14,7 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'websellproduct/products', // Tên thư mục trên Cloudinary
-        allowed_formats: ['jpeg', 'png', 'jpg'],
+        allowed_formats: ['jpeg', 'png', 'jpg', 'gif', 'webp', 'avif'],
         // (Tùy chọn) Áp dụng các biến đổi cho ảnh khi upload
         // transformation: [{ width: 500, height: 500, crop: 'limit' }]
     },
