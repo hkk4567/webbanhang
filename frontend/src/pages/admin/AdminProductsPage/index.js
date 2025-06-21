@@ -1,123 +1,104 @@
-import React, { useState, useMemo } from 'react';
-import { Modal, Button, Form, Row, Col, InputGroup } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Modal, Button, Form, Row, Col, InputGroup, Spinner, Image } from 'react-bootstrap';
 import classNames from 'classnames/bind';
 import styles from './AdminProductsPage.module.scss';
-import { usePagination } from '../../../hooks/usePagination';
+
+// Import các component, hook và API service
 import Pagination from '../../../components/common/Pagination';
 import ProductFormModal from './components/ProductFormModal';
-import { mockAllProducts } from '../../../data/products';
+import { usePagination } from '../../../hooks/usePaginationAPI';
+import { useDebounce } from '../../../hooks/useDebounce';
+import { getProducts, getCategories, createProduct, updateProduct, deleteProduct } from '../../../api/productService';
 
 const cx = classNames.bind(styles);
 const ITEMS_PER_PAGE = 10;
-const LOW_STOCK_THRESHOLD = 10; // Ngưỡng cảnh báo sắp hết hàng
 
-// Lấy danh sách danh mục duy nhất từ dữ liệu sản phẩm để lọc
-const productCategories = ['Tất cả', ...Array.from(new Set(mockAllProducts.map(p => p.category)))];
-const statusFilters = ['Tất cả', 'Còn hàng', 'Sắp hết hàng', 'Hết hàng'];
+// Các bộ lọc sẽ được gửi lên API
+const statusFilters = [
+    { label: 'Tất cả trạng thái', value: '' },
+    { label: 'Đang hoạt động', value: 'active' },
+    { label: 'Đã ẩn', value: 'inactive' },
+    { label: 'Hết hàng', value: 'out_of_stock' },
+];
 
 function AdminProductsPage() {
-    const [products, setProducts] = useState(mockAllProducts);
+    // --- STATE TỪ API ---
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [paginationData, setPaginationData] = useState({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [error, setError] = useState(null);
 
-    // --- STATE MỚI CHO UX ---
+    // --- STATE ĐIỀU KHIỂN ---
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterCategory, setFilterCategory] = useState('Tất cả');
-    const [filterStatus, setFilterStatus] = useState('Tất cả');
-    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+    const [filterCategory, setFilterCategory] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'DESC' });
+    const { requestedPage, paginationProps, goToPage } = usePagination(paginationData);
 
-    // --- State cho Modal ---
+    // --- STATE MODAL ---
     const [showFormModal, setShowFormModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [deletingProductId, setDeletingProductId] = useState(null);
+    const [deletingProduct, setDeletingProduct] = useState(null);
 
-    function removeDiacritics(str) {
-        return str
-            .normalize('NFD') // Tách ký tự và dấu (e.g., 'á' -> 'a' + '´')
-            .replace(/[\u0300-\u036f]/g, '') // Xóa các dấu
-            .replace(/đ/g, 'd').replace(/Đ/g, 'D'); // Chuyển 'đ' thành 'd'
-    }
+    // --- HÀM GỌI API ---
+    const fetchApiData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            // Lấy danh sách sản phẩm và danh mục đồng thời
+            const params = {
+                page: requestedPage,
+                limit: ITEMS_PER_PAGE,
+                search: debouncedSearchTerm,
+                categoryId: filterCategory,
+                status: filterStatus,
+                sort: `${sortConfig.direction === 'DESC' ? '-' : ''}${sortConfig.key}`,
+            };
 
-    // --- LOGIC XỬ LÝ DỮ LIỆU: TÌM KIẾM, LỌC, SẮP XẾP ---
-    const processedProducts = useMemo(() => {
-        let filteredProducts = [...products];
+            const [prodResponse, catResponse] = await Promise.all([
+                getProducts(params),
+                getCategories() // Chỉ gọi nếu chưa có
+            ]);
 
-        // 1. Lọc theo trạng thái
-        if (filterStatus !== 'Tất cả') {
-            filteredProducts = filteredProducts.filter(p => {
-                if (filterStatus === 'Còn hàng') return p.stock > LOW_STOCK_THRESHOLD;
-                if (filterStatus === 'Sắp hết hàng') return p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD;
-                if (filterStatus === 'Hết hàng') return p.stock === 0;
-                return true;
-            });
+            setProducts(prodResponse.data.data.products);
+            setPaginationData(prodResponse.data.data.pagination);
+            setCategories(catResponse.data.data.categories);
+
+        } catch (err) {
+            setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
         }
+    }, [requestedPage, debouncedSearchTerm, filterCategory, filterStatus, sortConfig]);
 
-        // 2. Lọc theo danh mục
-        if (filterCategory !== 'Tất cả') {
-            filteredProducts = filteredProducts.filter(p => p.category === filterCategory);
-        }
+    // Effect gọi API chính
+    useEffect(() => {
+        fetchApiData();
+    }, [fetchApiData]);
 
-        // 3. Tìm kiếm
-        if (searchTerm) {
-            // Chuẩn hóa từ khóa tìm kiếm: bỏ dấu, chuyển sang chữ thường, xóa khoảng trắng
-            const normalizedSearchTerm = removeDiacritics(searchTerm.toLowerCase().trim());
-
-            filteredProducts = filteredProducts.filter(p =>
-                // Chuẩn hóa tên sản phẩm trước khi so sánh
-                removeDiacritics(p.name.toLowerCase()).includes(normalizedSearchTerm) ||
-                p.id.toString().toLowerCase().includes(normalizedSearchTerm)
-            );
-        }
-
-        // 4. Sắp xếp
-        if (sortConfig.key) {
-            filteredProducts.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (a[sortConfig.key] > b[sortConfig.key]) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-
-        return filteredProducts;
-    }, [products, searchTerm, filterCategory, filterStatus, sortConfig]);
-
-    const { currentData, currentPage, maxPage, jump } = usePagination(processedProducts, ITEMS_PER_PAGE);
-
-    // --- CÁC HÀM HỖ TRỢ ---
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIcon = (key) => {
-        if (sortConfig.key !== key) return null;
-        return sortConfig.direction === 'ascending' ? <i className="bi bi-sort-up ms-1"></i> : <i className="bi bi-sort-down ms-1"></i>;
-    };
-
-    const renderStatusBadge = (stock) => {
-        if (stock === 0) {
-            return <span className={cx('status-badge', 'status-danger')}>Hết hàng</span>;
-        }
-        if (stock <= LOW_STOCK_THRESHOLD) {
-            return <span className={cx('status-badge', 'status-warning')}>Sắp hết</span>;
-        }
-        return <span className={cx('status-badge', 'status-success')}>Còn hàng</span>;
-    };
-
-    const formatCurrency = (amount) => amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+    // Effect reset trang khi bộ lọc thay đổi
+    useEffect(() => {
+        goToPage(1);
+    }, [debouncedSearchTerm, filterCategory, filterStatus, sortConfig, goToPage]);
 
     // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
+    const handleSortRequest = (key) => {
+        setSortConfig(prevConfig => ({
+            key,
+            direction: prevConfig.key === key && prevConfig.direction === 'ASC' ? 'DESC' : 'ASC',
+        }));
+    };
+
     const handleCloseModals = () => {
         setShowFormModal(false);
         setShowDeleteModal(false);
         setEditingProduct(null);
-        setDeletingProductId(null);
+        setDeletingProduct(null);
     };
 
     const handleShowAddModal = () => {
@@ -130,74 +111,98 @@ function AdminProductsPage() {
         setShowFormModal(true);
     };
 
-    const handleShowDeleteModal = (id) => {
-        setDeletingProductId(id);
+    const handleShowDeleteModal = (product) => {
+        setDeletingProduct(product);
         setShowDeleteModal(true);
     };
 
-    // --- HÀM XỬ LÝ CRUD ---
-    const handleSaveProduct = (productData) => {
-        const finalStock = productData.status === 'hidden' ? 0 : (parseInt(productData.stock, 10) || 0);
-
-        if (productData.id) {
-            setProducts(products.map(p =>
-                p.id === productData.id ? { ...p, ...productData, stock: finalStock } : p
-            ));
-            alert(`Đã cập nhật sản phẩm "${productData.name}"`);
-        } else {
-            const newProduct = {
-                ...productData,
-                id: `SP${Date.now()}`,
-                slug: productData.name.toLowerCase().replace(/\s+/g, '-'),
-                stock: finalStock,
-            };
-            setProducts([newProduct, ...products]);
-            alert(`Đã thêm sản phẩm mới "${productData.name}"`);
+    const handleSaveProduct = async (formData) => {
+        try {
+            if (editingProduct) {
+                await updateProduct(editingProduct.id, formData);
+            } else {
+                await createProduct(formData);
+            }
+            handleCloseModals();
+            fetchApiData(); // Tải lại dữ liệu
+        } catch (err) {
+            alert(err.response?.data?.message || 'Lỗi: Không thể lưu sản phẩm.');
         }
     };
 
-    const handleDeleteConfirm = () => {
-        setProducts(products.filter(p => p.id !== deletingProductId));
-        handleCloseModals();
+    const handleDeleteConfirm = async () => {
+        if (!deletingProduct) return;
+
+        setIsDeleting(true); // <<== BẮT ĐẦU LOADING
+
+        try {
+            await deleteProduct(deletingProduct.id);
+            handleCloseModals();
+            // Tải lại dữ liệu sau khi xóa thành công
+            if (products.length === 1 && requestedPage > 1) {
+                goToPage(requestedPage - 1);
+            } else {
+                // Phải gọi lại fetchApiData để nó chạy lại
+                // Chúng ta sẽ cần điều chỉnh lại fetchApiData một chút
+                fetchApiData();
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Lỗi: Không thể xóa sản phẩm.');
+        } finally {
+            setIsDeleting(false); // <<== KẾT THÚC LOADING (dù thành công hay thất bại)
+        }
     };
 
-    const productToDelete = products.find(p => p.id === deletingProductId);
+    // --- CÁC HÀM HỖ TRỢ RENDER ---
+    const getSortIcon = (key) => {
+        if (sortConfig.key !== key) return <i className="bi bi-arrow-down-up ms-1 text-muted"></i>;
+        return sortConfig.direction === 'ASC' ? <i className="bi bi-sort-up ms-1"></i> : <i className="bi bi-sort-down ms-1"></i>;
+    };
+
+    const renderStatusBadge = (status) => {
+        const variants = {
+            'active': { bg: 'success', text: 'Đang hoạt động' },
+            'inactive': { bg: 'secondary', text: 'Đã ẩn' },
+            'out_of_stock': { bg: 'warning', text: 'Hết hàng' },
+        };
+        const variant = variants[status] || { bg: 'light', text: 'Không xác định' };
+        return <span className={`badge bg-${variant.bg}`}>{variant.text}</span>;
+    };
+
+    const formatCurrency = (amount) => Number(amount).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
     return (
         <main className="mt-5 pt-3 pb-6 bgMain">
             <div className="container-fluid">
-                <div className="row">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
+                <Row className="mb-3">
+                    <Col>
                         <h1 className="fw-bold mb-0">Quản lý Sản phẩm</h1>
+                    </Col>
+                    <Col className="text-end">
                         <Button variant="primary" onClick={handleShowAddModal}>
                             <i className="bi bi-plus-circle me-2"></i> Thêm sản phẩm
                         </Button>
-                    </div>
-                </div>
+                    </Col>
+                </Row>
 
-                {/* --- KHU VỰC TÌM KIẾM VÀ LỌC --- */}
                 <div className="card shadow-sm mb-4">
                     <div className="card-body">
                         <Row className="g-3">
                             <Col lg={5}>
                                 <InputGroup>
                                     <InputGroup.Text><i className="bi bi-search"></i></InputGroup.Text>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Tìm theo tên hoặc ID sản phẩm..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
+                                    <Form.Control type="text" placeholder="Tìm theo tên sản phẩm..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                                 </InputGroup>
                             </Col>
                             <Col lg={4} md={6}>
                                 <Form.Select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-                                    {productCategories.map(cat => <option key={cat} value={cat}>{cat === 'Tất cả' ? 'Tất cả danh mục' : cat}</option>)}
+                                    <option value="">Tất cả danh mục</option>
+                                    {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                                 </Form.Select>
                             </Col>
                             <Col lg={3} md={6}>
                                 <Form.Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                                    {statusFilters.map(status => <option key={status} value={status}>{status === 'Tất cả' ? 'Tất cả trạng thái' : status}</option>)}
+                                    {statusFilters.map(status => <option key={status.value} value={status.value}>{status.label}</option>)}
                                 </Form.Select>
                             </Col>
                         </Row>
@@ -211,41 +216,43 @@ function AdminProductsPage() {
                                 <thead className="table-light">
                                     <tr>
                                         <th>STT</th>
-                                        <th onClick={() => requestSort('name')} className="cursor-pointer">Tên sản phẩm {getSortIcon('name')}</th>
-                                        <th>Trạng thái</th>
-                                        <th onClick={() => requestSort('stock')} className="cursor-pointer text-center">Số lượng {getSortIcon('stock')}</th>
-                                        <th onClick={() => requestSort('price')} className="cursor-pointer">Giá tiền {getSortIcon('price')}</th>
+                                        <th onClick={() => handleSortRequest('name')} className="cursor-pointer">Tên sản phẩm {getSortIcon('name')}</th>
+                                        <th onClick={() => handleSortRequest('status')} className="cursor-pointer">Trạng thái {getSortIcon('status')}</th>
+                                        <th onClick={() => handleSortRequest('quantity')} className="cursor-pointer text-center">Tồn kho {getSortIcon('quantity')}</th>
+                                        <th onClick={() => handleSortRequest('price')} className="cursor-pointer">Giá bán {getSortIcon('price')}</th>
                                         <th>Danh mục</th>
-                                        <th className="text-center">Tùy chỉnh</th>
+                                        <th className="text-center">Hành động</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {currentData.length > 0 ? (
-                                        currentData.map((product, index) => (
+                                    {isLoading ? (
+                                        <tr><td colSpan="7" className="text-center p-5"><Spinner animation="border" /></td></tr>
+                                    ) : error ? (
+                                        <tr><td colSpan="7" className="text-center p-5 text-danger">{error}</td></tr>
+                                    ) : products.length > 0 ? (
+                                        products.map((product, index) => (
                                             <tr key={product.id}>
-                                                <td>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
+                                                <td>{((paginationData.currentPage - 1) * ITEMS_PER_PAGE) + index + 1}</td>
                                                 <td>
-                                                    <img src={product.image} alt={product.name} className={cx('product-image')} />
-                                                    <span className="ms-2">{product.name}</span>
+                                                    <Image src={product.imageUrl || 'https://via.placeholder.com/60'} alt={product.name} className={cx('product-image')} rounded />
+                                                    <span className="ms-2 fw-medium">{product.name}</span>
                                                 </td>
-                                                <td>{renderStatusBadge(product.stock)}</td>
-                                                <td className="text-center fw-bold">{product.stock}</td>
+                                                <td>{renderStatusBadge(product.status)}</td>
+                                                <td className="text-center fw-bold">{product.quantity}</td>
                                                 <td>{formatCurrency(product.price)}</td>
-                                                <td>{product.category}</td>
+                                                <td>{product.category?.name || 'N/A'}</td>
                                                 <td className="text-center">
                                                     <Button variant="outline-primary" size="sm" className="me-2" title="Sửa" onClick={() => handleShowEditModal(product)}>
                                                         <i className="bi bi-pencil-square"></i>
                                                     </Button>
-                                                    <Button variant="outline-danger" size="sm" title="Xóa" onClick={() => handleShowDeleteModal(product.id)}>
+                                                    <Button variant="outline-danger" size="sm" title="Xóa" onClick={() => handleShowDeleteModal(product)}>
                                                         <i className="bi bi-trash"></i>
                                                     </Button>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
-                                        <tr>
-                                            <td colSpan="7" className="text-center p-4">Không tìm thấy sản phẩm nào.</td>
-                                        </tr>
+                                        <tr><td colSpan="7" className="text-center p-5">Không tìm thấy sản phẩm nào khớp.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -253,21 +260,20 @@ function AdminProductsPage() {
                     </div>
                 </div>
 
-                {processedProducts.length > ITEMS_PER_PAGE && (
-                    <div className="mt-4">
-                        <Pagination currentPage={currentPage} totalPageCount={maxPage} onPageChange={page => jump(page)} />
+                {!isLoading && paginationData.totalPages > 1 && (
+                    <div className="d-flex justify-content-center mt-4">
+                        <Pagination {...paginationProps} />
                     </div>
                 )}
             </div>
 
-            {/* --- CÁC MODAL --- */}
             {showFormModal && (
                 <ProductFormModal
                     show={showFormModal}
                     handleClose={handleCloseModals}
                     onSave={handleSaveProduct}
                     productToEdit={editingProduct}
-                    categories={productCategories.filter(c => c !== 'Tất cả')} // Truyền danh sách category vào form
+                    categories={categories}
                 />
             )}
 
@@ -276,13 +282,28 @@ function AdminProductsPage() {
                     <Modal.Title>Xác nhận xóa</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="text-center">
-                    {productToDelete && <img src={productToDelete.image} alt={productToDelete.name} className={cx('product-image-large', 'mb-3')} />}
-                    <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>"{productToDelete?.name}"</strong>?</p>
-                    <p className="text-danger">Hành động này không thể hoàn tác.</p>
+                    {deletingProduct && <Image src={deletingProduct.imageUrl || 'https://via.placeholder.com/150'} alt={deletingProduct.name} className={cx('product-image-large', 'mb-3')} rounded />}
+                    <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>"{deletingProduct?.name}"</strong>?</p>
+                    <p className="text-danger small">Hành động này sẽ ẩn sản phẩm nếu đã có người mua, hoặc xóa vĩnh viễn nếu chưa có.</p>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleCloseModals}>Hủy</Button>
-                    <Button variant="danger" onClick={handleDeleteConfirm}>Xác nhận Xóa</Button>
+                    <Button variant="danger" onClick={handleDeleteConfirm} disabled={isDeleting}>
+                        {isDeleting ? (
+                            <>
+                                <Spinner
+                                    as="span"
+                                    animation="border"
+                                    size="sm"
+                                    role="status"
+                                    aria-hidden="true"
+                                />
+                                <span className="ms-2">Đang xóa...</span>
+                            </>
+                        ) : (
+                            'Xác nhận Xóa'
+                        )}
+                    </Button>
                 </Modal.Footer>
             </Modal>
         </main>

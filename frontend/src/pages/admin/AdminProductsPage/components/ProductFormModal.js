@@ -1,44 +1,50 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Form, Row, Col } from 'react-bootstrap';
+import { Modal, Button, Form, Row, Col, Spinner, Alert } from 'react-bootstrap';
 
 // Trạng thái ban đầu cho form khi thêm sản phẩm mới
 const initialState = {
     name: '',
-    stock: 0,
-    price: 0,
-    category: '',
     description: '',
-    size: '',
-    status: 'available',
-    image: null, // Sẽ giữ URL ảnh hiện tại hoặc file ảnh mới
+    price: '',
+    quantity: '',
+    categoryId: '', // Sẽ là ID của danh mục
+    status: 'active', // Khớp với giá trị trong DB
 };
 
-function ProductFormModal({ show, handleClose, onSave, productToEdit }) {
+function ProductFormModal({ show, handleClose, onSave, productToEdit, categories }) {
     const [formData, setFormData] = useState(initialState);
-    const [imagePreview, setImagePreview] = useState(null);
-    const fileInputRef = useRef(null); // Ref để trigger input file ẩn
+    const [imageFile, setImageFile] = useState(null); // State riêng cho file ảnh mới
+    const [imagePreview, setImagePreview] = useState(null); // State cho URL xem trước
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const fileInputRef = useRef(null);
 
-    // useEffect để điền dữ liệu vào form khi ở chế độ "Sửa"
+    // useEffect để điền dữ liệu vào form khi ở chế độ "Sửa" hoặc reset khi "Thêm"
     useEffect(() => {
-        if (productToEdit) {
-            setFormData({
-                name: productToEdit.name || '',
-                stock: productToEdit.stock || 0,
-                price: productToEdit.price || 0,
-                category: productToEdit.category || '',
-                description: productToEdit.description || '',
-                size: productToEdit.size || '',
-                status: productToEdit.stock > 0 ? 'available' : 'hidden',
-                image: productToEdit.image, // Lưu link ảnh cũ
-            });
-            setImagePreview(productToEdit.image); // Hiển thị ảnh cũ
-        } else {
-            // Reset form khi ở chế độ "Thêm mới"
-            setFormData(initialState);
-            setImagePreview(null);
+        if (show) { // Chỉ chạy logic khi modal được mở
+            if (productToEdit) {
+                // Chế độ sửa: điền dữ liệu từ props
+                setFormData({
+                    name: productToEdit.name || '',
+                    description: productToEdit.description || '',
+                    price: productToEdit.price || '',
+                    quantity: productToEdit.quantity || '',
+                    categoryId: productToEdit.categoryId || '',
+                    status: productToEdit.status || 'active',
+                });
+                setImagePreview(productToEdit.imageUrl || null); // Hiển thị ảnh cũ từ URL
+                setImageFile(null); // Reset file ảnh mới
+            } else {
+                // Chế độ thêm: reset về trạng thái ban đầu
+                setFormData(initialState);
+                setImagePreview(null);
+                setImageFile(null);
+            }
+            setError(''); // Luôn xóa lỗi cũ khi mở modal
         }
     }, [productToEdit, show]);
 
+    // Hàm xử lý chung cho các ô input text, number, select
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -48,7 +54,7 @@ function ProductFormModal({ show, handleClose, onSave, productToEdit }) {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setFormData(prev => ({ ...prev, image: file })); // Lưu file object vào state
+            setImageFile(file); // Lưu file object vào state riêng
             setImagePreview(URL.createObjectURL(file)); // Tạo URL tạm thời để xem trước
         }
     };
@@ -56,120 +62,147 @@ function ProductFormModal({ show, handleClose, onSave, productToEdit }) {
     // Xóa ảnh xem trước và dữ liệu ảnh
     const handleRemoveImage = () => {
         setImagePreview(null);
-        setFormData(prev => ({ ...prev, image: null }));
+        setImageFile(null);
         if (fileInputRef.current) {
-            fileInputRef.current.value = ""; // Reset input file để có thể chọn lại cùng 1 file
+            fileInputRef.current.value = "";
         }
-    }
-
-    const handleSaveClick = () => {
-        onSave({ ...formData, id: productToEdit?.id });
-        handleClose();
     };
 
+    // Xử lý khi nhấn nút "Lưu"
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
+        // 1. Tạo đối tượng FormData
+        const formDataToSend = new FormData();
+
+        // 2. Append tất cả các trường dữ liệu vào FormData
+        Object.keys(formData).forEach(key => {
+            formDataToSend.append(key, formData[key]);
+        });
+
+        // 3. Append file ảnh mới nếu có
+        if (imageFile) {
+            formDataToSend.append('image', imageFile);
+        }
+
+        try {
+            // 4. Gọi hàm onSave được truyền từ component cha
+            await onSave(formDataToSend);
+            // Component cha sẽ tự đóng modal và tải lại dữ liệu
+        } catch (err) {
+            setError(err.response?.data?.message || 'Đã xảy ra lỗi không xác định.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
-        <Modal show={show} onHide={handleClose} size="lg" centered>
-            <Modal.Header closeButton>
-                <Modal.Title>{productToEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <Form>
+        <Modal show={show} onHide={handleClose} size="lg" centered backdrop="static">
+            <Form onSubmit={handleSubmit}>
+                <Modal.Header closeButton>
+                    <Modal.Title>{productToEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {error && <Alert variant="danger">{error}</Alert>}
                     <Row>
-                        {/* CỘT TRÁI */}
-                        <Col md={6}>
-                            {productToEdit && (
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Mã sản phẩm</Form.Label>
-                                    <Form.Control type="text" value={productToEdit.id} disabled />
-                                </Form.Group>
-                            )}
-                            <Form.Group className="mb-3">
-                                <Form.Label>Tên sản phẩm</Form.Label>
-                                <Form.Control type="text" name="name" value={formData.name} onChange={handleChange} />
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Số lượng</Form.Label>
-                                <Form.Control type="number" name="stock" value={formData.stock} onChange={handleChange} />
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Giá bán</Form.Label>
-                                <Form.Control type="number" name="price" value={formData.price} onChange={handleChange} />
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Dung tích</Form.Label>
-                                <Form.Control type="text" name="size" value={formData.size} onChange={handleChange} placeholder="VD: 250ml" />
-                            </Form.Group>
-                        </Col>
-
-                        {/* CỘT PHẢI */}
-                        <Col md={6}>
+                        {/* CỘT PHẢI - Ảnh sản phẩm */}
+                        <Col md={5}>
                             <Form.Group className="mb-3">
                                 <Form.Label>Ảnh sản phẩm</Form.Label>
-                                <div
-                                    className="mb-2 border rounded"
-                                    style={{
-                                        height: '200px',
-                                        width: '100%',
-                                        backgroundColor: '#f8f9fa',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        overflow: 'hidden'
-                                    }}
-                                >
+                                <div className="border rounded d-flex align-items-center justify-content-center" style={{ height: '200px', backgroundColor: '#f8f9fa', overflow: 'hidden' }}>
                                     {imagePreview ? (
-                                        <img
-                                            src={imagePreview}
-                                            alt="Xem trước"
-                                            style={{
-                                                height: '100%',
-                                                width: '100%',
-                                                objectFit: 'contain'
-                                            }}
-                                        />
+                                        <img src={imagePreview} alt="Xem trước" style={{ height: '100%', width: '100%', objectFit: 'contain' }} />
                                     ) : (
                                         <span className="text-muted">Chưa có ảnh</span>
                                     )}
                                 </div>
                                 <Form.Control type="file" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} accept="image/*" />
-                                <div className="d-flex">
-                                    <Button variant="outline-secondary" size="sm" onClick={() => fileInputRef.current.click()}>Chọn ảnh mới</Button>
-                                    {imagePreview && <Button variant="outline-danger" size="sm" className="ms-2" onClick={handleRemoveImage}>Xóa ảnh</Button>}
+                                <div className="d-flex mt-2">
+                                    <Button variant="outline-primary" size="sm" onClick={() => fileInputRef.current.click()} disabled={isLoading}>
+                                        <i className="bi bi-upload me-2"></i>Chọn ảnh
+                                    </Button>
+                                    {imagePreview && (
+                                        <Button variant="outline-danger" size="sm" className="ms-2" onClick={handleRemoveImage} disabled={isLoading}>
+                                            <i className="bi bi-trash me-2"></i>Xóa ảnh
+                                        </Button>
+                                    )}
                                 </div>
                             </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Danh mục</Form.Label>
-                                <Form.Select name="category" value={formData.category} onChange={handleChange}>
-                                    <option value="">-- Chọn danh mục --</option>
-                                    <option value="Cà phê">Cà phê</option>
-                                    <option value="Trà">Trà</option>
-                                    <option value="Nước ép">Nước ép</option>
-                                    <option value="Bánh ngọt">Bánh ngọt</option>
-                                </Form.Select>
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Trạng thái</Form.Label>
-                                <Form.Select name="status" value={formData.status} onChange={handleChange}>
-                                    <option value="available">Còn hàng (Available)</option>
-                                    <option value="hidden">Ẩn (Hidden)</option>
-                                </Form.Select>
-                            </Form.Group>
                         </Col>
-                        {/* MÔ TẢ */}
+
+                        {/* CỘT TRÁI - Thông tin sản phẩm */}
+                        <Col md={7}>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Tên sản phẩm <span className="text-danger">*</span></Form.Label>
+                                <Form.Control type="text" name="name" value={formData.name} onChange={handleChange} required disabled={isLoading} />
+                            </Form.Group>
+
+                            <Row>
+                                <Col>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Giá bán <span className="text-danger">*</span></Form.Label>
+                                        <Form.Control type="number" name="price" value={formData.price} onChange={handleChange} required min="0" disabled={isLoading} />
+                                    </Form.Group>
+                                </Col>
+                                <Col>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Tồn kho <span className="text-danger">*</span></Form.Label>
+                                        <Form.Control type="number" name="quantity" value={formData.quantity} onChange={handleChange} required min="0" disabled={isLoading} />
+                                    </Form.Group>
+                                </Col>
+                            </Row>
+
+                            <Row>
+                                <Col>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Danh mục <span className="text-danger">*</span></Form.Label>
+                                        <Form.Select name="categoryId" value={formData.categoryId} onChange={handleChange} required disabled={isLoading}>
+                                            <option value="">-- Chọn danh mục --</option>
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Trạng thái</Form.Label>
+                                        <Form.Select name="status" value={formData.status} onChange={handleChange} disabled={isLoading}>
+                                            <option value="active">Đang hoạt động</option>
+                                            <option value="inactive">Đã ẩn</option>
+                                            <option value="out_of_stock">Hết hàng</option>
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                            </Row>
+                        </Col>
+
                         <Col xs={12}>
                             <Form.Group className="mb-3">
                                 <Form.Label>Mô tả sản phẩm</Form.Label>
-                                <Form.Control as="textarea" rows={3} name="description" value={formData.description} onChange={handleChange} />
+                                <Form.Control as="textarea" rows={4} name="description" value={formData.description} onChange={handleChange} disabled={isLoading} />
                             </Form.Group>
                         </Col>
                     </Row>
-                </Form>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={handleClose}>Hủy</Button>
-                <Button variant="primary" onClick={handleSaveClick}>Lưu thay đổi</Button>
-            </Modal.Footer>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
+                        Hủy
+                    </Button>
+                    <Button variant="primary" type="submit" disabled={isLoading}>
+                        {isLoading ? (
+                            <>
+                                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                                <span className="ms-2">Đang lưu...</span>
+                            </>
+                        ) : (
+                            'Lưu thay đổi'
+                        )}
+                    </Button>
+                </Modal.Footer>
+            </Form>
         </Modal>
     );
 }
