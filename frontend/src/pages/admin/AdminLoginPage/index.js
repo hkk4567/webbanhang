@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { Form, InputGroup, Button, Spinner, Alert } from 'react-bootstrap'; // Import thêm các component cần thiết
 import styles from './AdminLoginPage.module.scss';
-import { useAuth } from '../../../context/AuthContext';
+import { useAdminAuth } from '../../../context/AdminAuthContext';
 
 const cx = classNames.bind(styles);
 
@@ -14,7 +14,7 @@ function AdminLoginPage() {
     const [isLoading, setIsLoading] = useState(false); // State cho trạng thái loading
     const [showPassword, setShowPassword] = useState(false); // State để hiện/ẩn mật khẩu
 
-    const { login } = useAuth(); // <<-- SỬ DỤNG useAuth và lấy hàm `login`
+    const { login } = useAdminAuth();// <<-- SỬ DỤNG useAuth và lấy hàm `login`
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || '/admin/dashboard';

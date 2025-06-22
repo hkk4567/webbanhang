@@ -4,6 +4,7 @@ import classNames from 'classnames/bind';
 import styles from './LoginPage.module.scss';
 //sử lý login
 import { useAuth } from '../../../context/AuthContext';
+import { Spinner } from 'react-bootstrap';
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
@@ -14,19 +15,36 @@ function LoginPage() {
     // Sử dụng useState để quản lý trạng thái của form
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuth(); // Lấy hàm login từ context
     const navigate = useNavigate();
     // Hàm xử lý khi người dùng nhấn nút "Đăng nhập"
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault(); // Ngăn form reload lại trang
-        const userDataFromApi = {
-            name: 'Nguyen Van A', // Lấy từ API
-            email: email,        // Lấy từ API
-        };
 
-        login(userDataFromApi); // Truyền dữ liệu người dùng vào hàm login
+        // Reset lỗi cũ và bắt đầu trạng thái loading
+        setError(null);
+        setIsLoading(true);
 
-        navigate('/', { replace: true });
+        try {
+            // Gọi hàm login từ context với email và password từ form
+            // Hàm login trong context đã là async, nên chúng ta dùng await
+            await login(email, password);
+
+            // Nếu không có lỗi, điều hướng người dùng về trang chủ
+            navigate('/', { replace: true });
+
+        } catch (err) {
+            // Nếu có lỗi từ API (ví dụ: sai mật khẩu, tài khoản không tồn tại)
+            // Lỗi sẽ được bắt ở đây
+            const errorMessage = err.response?.data?.message || 'Email hoặc mật khẩu không chính xác.';
+            setError(errorMessage);
+            console.error("Lỗi đăng nhập:", err);
+        } finally {
+            // Dù thành công hay thất bại, cũng phải dừng trạng thái loading
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -57,6 +75,11 @@ function LoginPage() {
                         <div className="col-lg-6 col-md-8 col-12">
                             <div className={cx('sign-in-content')}>
                                 <h3 className="text-center mb-4">Đăng nhập tài khoản</h3>
+                                {error && (
+                                    <div className="alert alert-danger" role="alert">
+                                        {error}
+                                    </div>
+                                )}
                                 <form onSubmit={handleSubmit}>
                                     {/* Sử dụng mb-3 của Bootstrap để tạo khoảng cách */}
                                     <div className="mb-3">
@@ -69,6 +92,7 @@ function LoginPage() {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             required
+                                            disabled={isLoading}
                                         />
                                     </div>
                                     <div className="mb-4">
@@ -81,13 +105,28 @@ function LoginPage() {
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             required
+                                            disabled={isLoading}
                                         />
                                     </div>
                                     <div className="d-flex align-items-center">
-                                        <button type="submit" className="btn btn-primary me-3">
-                                            Đăng nhập
+                                        <button type="submit" className="btn btn-primary me-3" disabled={isLoading}>
+                                            {isLoading ? (
+                                                <>
+                                                    <Spinner
+                                                        as="span"
+                                                        animation="border"
+                                                        size="sm"
+                                                        role="status"
+                                                        aria-hidden="true"
+                                                        className="me-2"
+                                                    />
+                                                    Đang xử lý...
+                                                </>
+                                            ) : (
+                                                'Đăng nhập'
+                                            )}
                                         </button>
-                                        <Link to="/register" className="btn btn-outline-primary">
+                                        <Link to="/register" className={cx('btn btn-outline-primary', { 'disabled': isLoading })}>
                                             Đăng ký
                                         </Link>
                                     </div>

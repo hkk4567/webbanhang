@@ -1,13 +1,13 @@
 import apiClient from './apiClient';
 
 export const getOrders = (params) => {
-    return apiClient.get('/orders', { params });
+    return apiClient.admin.get('/orders', { params });
 };
 
 export const getOrderById = (id) => {
-    return apiClient.get(`/orders/${id}`);
+    return apiClient.admin.get(`/orders/${id}`);
 };
 
 export const updateOrderStatus = (id, status) => {
-    return apiClient.patch(`/orders/${id}/status`, { status });
+    return apiClient.admin.patch(`/orders/${id}/status`, { status });
 };

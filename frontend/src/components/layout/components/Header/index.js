@@ -5,7 +5,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 // Import các context
 import { useCart } from '../../../../context/CartContext';
-import { useAuth } from '../../../../context/AuthContext';// Dùng chung context admin cho user hoặc tạo AuthContext riêng
+import { useAuth } from '../../../../context/AuthContext';
 import CartItem from '../../../../components/common/CartItem';
 // Import các thành phần UI
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

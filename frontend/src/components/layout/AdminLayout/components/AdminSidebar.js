@@ -5,7 +5,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { Nav, Accordion, Offcanvas } from 'react-bootstrap'; // <-- Import các component chính
 import classNames from 'classnames/bind';
 import styles from './sidebar.module.scss'; // Đổi tên file scss cho nhất quán
-import { useAuth } from '../../../../context/AuthContext';
+import { useAdminAuth } from '../../../../context/AdminAuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faTachometerAlt, faUsers, faBoxOpen, faMugHot, faSignOutAlt, faLayerGroup
@@ -15,7 +15,7 @@ const cx = classNames.bind(styles);
 
 // Nhận props từ AdminLayout để điều khiển việc hiển thị
 function AdminSidebar({ isMobileOpen, onHide }) {
-    const { logout } = useAuth();
+    const { logout } = useAdminAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {

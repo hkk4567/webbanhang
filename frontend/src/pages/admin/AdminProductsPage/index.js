@@ -61,7 +61,7 @@ function AdminProductsPage() {
 
             const [prodResponse, catResponse] = await Promise.all([
                 getAdminProducts(params),
-                categories.length === 0 ? getCategories() : Promise.resolve(null),
+                categories.length === 0 ? getCategories('admin') : Promise.resolve(null),
             ]);
 
             setProducts(prodResponse.data.data.products);

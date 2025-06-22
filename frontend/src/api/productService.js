@@ -11,7 +11,7 @@ import apiClient from './apiClient';
  */
 export const getProducts = (params) => {
     // Gọi đến endpoint GET /products
-    return apiClient.get('/products', { params });
+    return apiClient.user.get('/products', { params });
 };
 
 /**
@@ -20,7 +20,7 @@ export const getProducts = (params) => {
  */
 export const getProductById = (id) => {
     // Gọi đến endpoint GET /products/:id
-    return apiClient.get(`/products/${id}`);
+    return apiClient.user.get(`/products/${id}`);
 };
 
 
@@ -35,7 +35,7 @@ export const getProductById = (id) => {
  */
 export const getAdminProducts = (params) => {
     // Gọi đến endpoint GET /products/admin mà chúng ta đã tạo
-    return apiClient.get('/products/admin', { params });
+    return apiClient.admin.get('/products/admin', { params });
 };
 
 /**
@@ -44,7 +44,7 @@ export const getAdminProducts = (params) => {
  */
 export const createProduct = (formData) => {
     // Endpoint POST /products được bảo vệ cho admin
-    return apiClient.post('/products', formData, {
+    return apiClient.admin.post('/products', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 };
@@ -56,7 +56,7 @@ export const createProduct = (formData) => {
  */
 export const updateProduct = (id, formData) => {
     // Endpoint PATCH /products/:id được bảo vệ cho admin
-    return apiClient.patch(`/products/${id}`, formData, {
+    return apiClient.admin.patch(`/products/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 };
@@ -67,7 +67,7 @@ export const updateProduct = (id, formData) => {
  */
 export const deleteProduct = (id) => {
     // Endpoint DELETE /products/:id được bảo vệ cho admin
-    return apiClient.delete(`/products/${id}`);
+    return apiClient.admin.delete(`/products/${id}`);
 };
 
 
@@ -78,6 +78,10 @@ export const deleteProduct = (id) => {
 /**
  * Lấy danh sách tất cả các danh mục.
  */
-export const getCategories = () => {
-    return apiClient.get('/categories');
+export const getCategories = (scope = 'user') => {
+    // Kiểm tra xem scope có hợp lệ không, nếu không thì mặc định là 'user'
+    const client = apiClient[scope] || apiClient.user;
+
+    // Gọi API bằng client đã được chọn
+    return client.get('/categories');
 };

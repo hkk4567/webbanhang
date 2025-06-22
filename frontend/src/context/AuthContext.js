@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginApi, logoutApi, getMeApi } from '../api/authService'; // Giả sử API nằm ở đây
+import { loginUserApi, logoutUserApi, getMeUserApi } from '../api/authService';
 
 const AuthContext = createContext();
 
@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
         const checkUserSession = async () => {
             try {
                 // Thử gọi API /users/me để lấy thông tin user nếu có cookie hợp lệ
-                const response = await getMeApi();
+                const response = await getMeUserApi();
                 setUser(response.data.data.user);
                 setIsLoggedIn(true);
             } catch (error) {
@@ -32,21 +32,19 @@ export function AuthProvider({ children }) {
     }, []);
 
     const login = async (email, password) => {
-        // Hàm login này trả về user data để component có thể kiểm tra quyền
-        const response = await loginApi(email, password);
+        const response = await loginUserApi(email, password); // Gọi đúng hàm login của user
         const loggedInUser = response.data.data.user;
         setUser(loggedInUser);
         setIsLoggedIn(true);
-        return loggedInUser; // Trả về user data
+        return loggedInUser;
     };
 
     const logout = async () => {
         try {
-            await logoutApi();
+            await logoutUserApi(); // Gọi đúng hàm logout của user
         } catch (error) {
             console.error("Lỗi khi đăng xuất API:", error);
         } finally {
-            // Dù API có lỗi, vẫn phải xóa thông tin ở client
             setUser(null);
             setIsLoggedIn(false);
         }

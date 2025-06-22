@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './RegisterPage.module.scss';
 import AddressSelector from '../../../components/common/AddressSelector';
+import { Spinner, Alert } from 'react-bootstrap'; // Import thêm
+
+// --- BƯỚC 1: IMPORT HÀM API ĐĂNG KÝ ---
+import { registerUser } from '../../../api/userService';
+// (Tùy chọn) Import useAuth để tự động đăng nhập sau khi đăng ký thành công
+import { useAuth } from '../../../context/AuthContext';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
@@ -12,18 +18,24 @@ const cx = classNames.bind(styles);
 function RegisterPage() {
     // State giờ đây chỉ cần quản lý dữ liệu của form
     const [formData, setFormData] = useState({
-        name: '',
+        fullName: '', // Đổi 'name' thành 'fullName' để khớp với backend model
         phone: '',
         email: '',
-        address: '',
-        province: '', // Sẽ lưu code của tỉnh
-        district: '', // Sẽ lưu code của huyện
-        ward: '',     // Sẽ lưu code của xã
+        streetAddress: '', // Đổi 'address' thành 'streetAddress'
+        province: '',
+        district: '',
+        ward: '',
         password: '',
-        confirmPassword: '',
+        passwordConfirm: '', // Đổi 'confirmPassword' thành 'passwordConfirm'
     });
 
     const [errors, setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiError, setApiError] = useState(''); // Lỗi từ API
+    const [successMessage, setSuccessMessage] = useState(''); // Thông báo thành công
+
+    const navigate = useNavigate();
+    const { login } = useAuth();
 
     // --- EVENT HANDLERS ---
     // Hàm xử lý chung cho các input text
@@ -36,9 +48,9 @@ function RegisterPage() {
     const handleAddressChange = (addressData) => {
         setFormData(prev => ({
             ...prev,
-            province: addressData.city,
-            district: addressData.district,
-            ward: addressData.ward,
+            province: addressData.provinceName,
+            district: addressData.districtName,
+            ward: addressData.wardName,
         }));
     };
 
@@ -46,27 +58,50 @@ function RegisterPage() {
     // Hàm validate (giữ nguyên)
     const validateForm = () => {
         let newErrors = {};
-        if (!formData.name) newErrors.name = 'Vui lòng nhập họ và tên.';
+        if (!formData.fullName) newErrors.fullName = 'Vui lòng nhập họ và tên.';
         // Thêm các quy tắc validate khác cho phone, email, ...
         if (formData.password.length < 6) {
             newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự.';
         }
-        if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Mật khẩu nhập lại không khớp.';
+        if (formData.password !== formData.passwordConfirm) {
+            newErrors.passwordConfirm = 'Mật khẩu nhập lại không khớp.';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     // Hàm submit (giữ nguyên, nhưng không cần tìm tên nữa nếu bạn quyết định lưu code)
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setApiError('');
+        setSuccessMessage('');
+
         if (validateForm()) {
-            // Không cần phải chuyển đổi gì nữa, formData đã chứa đúng tên
-            console.log('Form hợp lệ, gửi dữ liệu:', formData);
-            alert('Đăng ký thành công!');
-        } else {
-            console.log('Form có lỗi, vui lòng kiểm tra lại.');
+            setIsLoading(true);
+            try {
+                // Chuẩn bị dữ liệu gửi đi, có thể loại bỏ passwordConfirm
+                const dataToSubmit = { ...formData };
+                delete dataToSubmit.passwordConfirm;
+
+                // Gọi API đăng ký
+                await registerUser(dataToSubmit);
+
+                setSuccessMessage('Đăng ký thành công! Đang tự động đăng nhập...');
+
+                // Tự động đăng nhập cho người dùng
+                await login(formData.email, formData.password);
+
+                // Đợi một chút để người dùng đọc thông báo rồi mới chuyển trang
+                setTimeout(() => {
+                    navigate('/');
+                }, 2000);
+
+            } catch (err) {
+                const errorMessage = err.response?.data?.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+                setApiError(errorMessage);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -99,11 +134,13 @@ function RegisterPage() {
                             <div className={cx('form-wrapper')}>
                                 <form id="sign-up-form" onSubmit={handleSubmit} noValidate>
                                     <h3 className={cx('form-title')}>Đăng ký tài khoản</h3>
+                                    {apiError && <Alert variant="danger">{apiError}</Alert>}
+                                    {successMessage && <Alert variant="success">{successMessage}</Alert>}
                                     <div className="row">
                                         <div className="col-md-6 mb-3">
                                             <label htmlFor="name" className="form-label">Họ & tên:</label>
-                                            <input type="text" id="name" name="name" placeholder="VD: Nguyen Van A" className="form-control" onChange={handleChange} required />
-                                            {errors.name && <div className={cx('error-message')}>{errors.name}</div>}
+                                            <input type="text" id="fullName" name="fullName" placeholder="VD: Nguyen Van A" className="form-control" onChange={handleChange} required disabled={isLoading} />
+                                            {errors.fullName && <div className={cx('error-message')}>{errors.fullName}</div>}
                                         </div>
                                         <div className="col-md-6 mb-3">
                                             <label htmlFor="phone" className="form-label">Số điện thoại:</label>
@@ -114,11 +151,11 @@ function RegisterPage() {
                                             <input type="email" id="email" name="email" placeholder="Email" className="form-control" onChange={handleChange} required />
                                         </div>
                                         <div className="col-12 mb-3">
-                                            <label htmlFor="address" className="form-label">Địa chỉ (Số nhà, tên đường):</label>
-                                            <input type="text" id="address" name="address" placeholder="VD: 123 Đường ABC" className="form-control" onChange={handleChange} required />
+                                            <label htmlFor="streetAddress" className="form-label">Địa chỉ (Số nhà, tên đường):</label>
+                                            <input type="text" id="streetAddress" name="streetAddress" placeholder="VD: 123 Đường ABC" className="form-control" onChange={handleChange} required disabled={isLoading} />
                                         </div>
                                         <div className="col-12">
-                                            <AddressSelector onChange={handleAddressChange} />
+                                            <AddressSelector onChange={handleAddressChange} disabled={isLoading} />
                                         </div>
                                         <div className="col-md-6 mb-3">
                                             <label htmlFor="password" className="form-label">Mật khẩu:</label>
@@ -126,12 +163,14 @@ function RegisterPage() {
                                             {errors.password && <div className={cx('error-message')}>{errors.password}</div>}
                                         </div>
                                         <div className="col-md-6 mb-3">
-                                            <label htmlFor="confirmPassword" className="form-label">Nhập lại mật khẩu:</label>
-                                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" className="form-control" onChange={handleChange} required />
-                                            {errors.confirmPassword && <div className={cx('error-message')}>{errors.confirmPassword}</div>}
+                                            <label htmlFor="passwordConfirm" className="form-label">Nhập lại mật khẩu:</label>
+                                            <input type="password" id="passwordConfirm" name="passwordConfirm" placeholder="Nhập lại mật khẩu" className="form-control" onChange={handleChange} required disabled={isLoading} />
+                                            {errors.passwordConfirm && <div className={cx('error-message')}>{errors.passwordConfirm}</div>}
                                         </div>
                                         <div className="col-12 mt-3 text-center">
-                                            <button type="submit" className="btn btn-primary px-5">Đăng ký</button>
+                                            <button type="submit" className="btn btn-primary px-5" disabled={isLoading}>
+                                                {isLoading ? <Spinner as="span" animation="border" size="sm" /> : 'Đăng ký'}
+                                            </button>
                                         </div>
                                     </div>
                                 </form>
