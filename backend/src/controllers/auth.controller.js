@@ -15,6 +15,65 @@ const signToken = id => {
     });
 };
 
+exports.loginAdmin = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return next(new AppError('Vui lòng cung cấp email và mật khẩu!', 400));
+        }
+
+        const user = await User.scope('withPassword').findOne({ where: { email } });
+
+        if (!user || !(await user.correctPassword(password))) {
+            return next(new AppError('Email hoặc mật khẩu không chính xác.', 401));
+        }
+
+        // --- ĐIỂM KHÁC BIỆT QUAN TRỌNG ---
+        // KIỂM TRA VAI TRÒ (ROLE)
+        if (!['admin', 'staff'].includes(user.role)) {
+            return next(new AppError('Bạn không có quyền truy cập trang quản trị.', 403)); // 403 Forbidden
+        }
+
+        if (user.status !== 'active') {
+            return next(new AppError('Tài khoản của bạn đã bị khóa.', 403));
+        }
+
+        const token = signToken(user.id);
+
+        // Đặt tên cookie khác để không ghi đè lên cookie của user
+        const cookieOptions = {
+            expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        };
+
+        // Đặt tên cookie là 'jwt_admin'
+        res.cookie('jwt_admin', token, cookieOptions);
+
+        user.password = undefined;
+
+        res.status(200).json({
+            status: 'success',
+            token, // Vẫn trả về token để frontend có thể lưu vào LocalStorage nếu cần
+            data: {
+                user
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Hàm logout của admin cũng nên xóa cookie admin
+exports.logoutAdmin = (req, res) => {
+    res.cookie('jwt_admin', 'loggedout', {
+        expires: new Date(Date.now() + 10 * 1000),
+        httpOnly: true
+    });
+    res.status(200).json({ status: 'success', message: 'Đăng xuất admin thành công' });
+};
+
 exports.login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -54,7 +113,7 @@ exports.login = async (req, res, next) => {
             secure: process.env.NODE_ENV === 'production'
         };
 
-        res.cookie('jwt', token, cookieOptions);
+        res.cookie('jwt_user', token, cookieOptions);
 
         // Quan trọng: Sau khi đã xác thực xong, loại bỏ mật khẩu khỏi đối tượng user
         // trước khi gửi về cho client.
@@ -74,7 +133,7 @@ exports.login = async (req, res, next) => {
 
 exports.logout = (req, res) => {
     // Nếu bạn lưu token trong cookie, hãy xóa nó
-    res.cookie('jwt', 'loggedout', {
+    res.cookie('jwt_user', 'loggedout', {
         expires: new Date(Date.now() + 10 * 1000), // Hết hạn sau 10s
         httpOnly: true
     });

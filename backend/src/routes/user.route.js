@@ -14,11 +14,15 @@ router.post('/register', userController.createUser);
 // Middleware `protect` sẽ được áp dụng cho tất cả các route bên dưới nó.
 router.use(authMiddleware.protect);
 router.get('/me', userController.getMe, userController.getUserById);
-// [GET] /api/users -> Lấy danh sách tất cả người dùng
-router.get('/', userController.getAllUsers);
 
 // --- CÁC ROUTE CHỈ DÀNH CHO ADMIN ---
-router.use(authMiddleware.restrictTo('admin'));
+router.use(authMiddleware.restrictTo('admin', 'staff'));
+// [GET] /api/users/admin/me
+// Route này hoạt động tương tự như /users/me, nhưng được bảo vệ thêm bởi restrictTo
+router.get('/admin/me', userController.getMe, userController.getUserById);
+
+// [GET] /api/users -> Lấy danh sách tất cả người dùng
+router.get('/', userController.getAllUsers);
 // Nhóm các route có cùng đường dẫn '/:id' lại với nhau cho gọn
 router
     .route('/:id')

@@ -1,13 +1,13 @@
 const express = require('express');
 const categoryController = require('../controllers/category.controller.js');
 const { protect, restrictTo } = require('../middlewares/auth.middleware.js');
-
+const authMiddleware = require('../middlewares/auth.middleware');
 const router = express.Router();
 
 // --- ROUTE CÔNG KHAI ---
 // Bất kỳ ai cũng có thể xem danh sách danh mục và chi tiết một danh mục
-router.get('/', categoryController.getAllCategories);
-router.get('/:id', categoryController.getCategory);
+router.get('/', authMiddleware.checkUser, categoryController.getAllCategories);
+router.get('/:id', authMiddleware.checkUser, categoryController.getCategory);
 
 // --- CÁC ROUTE CỦA ADMIN ---
 // Áp dụng middleware bảo vệ và giới hạn quyền cho các route bên dưới

@@ -1,109 +1,97 @@
-// src/middlewares/auth.middleware.js
-
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync'); // Dùng lại catchAsync nếu có
+const catchAsync = require('../utils/catchAsync');
 
 /**
  * Middleware để bảo vệ các route.
- * 1. Kiểm tra xem token có tồn tại không.
- * 2. Xác thực token.
- * 3. Kiểm tra xem người dùng của token đó còn tồn tại không.
- * 4. (Tùy chọn) Kiểm tra xem người dùng có đổi mật khẩu sau khi token được cấp không.
+ * Phiên bản nâng cấp để xử lý 2 loại cookie: 'jwt_admin' và 'jwt_user'.
  */
 exports.protect = catchAsync(async (req, res, next) => {
     // 1) Lấy token và kiểm tra xem nó có tồn tại không
     let token;
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith('Bearer')
-    ) {
-        // Dành cho Mobile App hoặc các client gửi qua Header
-        token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.jwt) {
-        // Dành cho Web Browser gửi qua Cookie
-        token = req.cookies.jwt;
+    const scope = req.headers['x-auth-scope'];
+    if (scope === 'admin') {
+        token = req.cookies.jwt_admin;
+        if (!token) {
+            // Rõ ràng yêu cầu scope admin nhưng không có token admin -> lỗi
+            return next(new AppError('Phiên đăng nhập quản trị không hợp lệ hoặc đã hết hạn.', 401));
+        }
+    } else if (scope === 'user') {
+        token = req.cookies.jwt_user;
+        if (!token) {
+            // Yêu cầu scope user nhưng không có token user -> lỗi
+            return next(new AppError('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.', 401));
+        }
+    } else {
+        // Nếu không có header X-Auth-Scope, từ chối request
+        return next(new AppError('Yêu cầu không hợp lệ, không thể xác định scope xác thực.', 400));
     }
 
-    if (!token) {
-        return next(
-            new AppError('Bạn chưa đăng nhập. Vui lòng đăng nhập để truy cập.', 401)
-        );
-    }
-
-    // 2) Xác thực token (Verification)
-    // jwt.verify là hàm đồng bộ, nhưng ta dùng promisify để biến nó thành async/await cho nhất quán
+    // 2) Xác thực token
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-    // 3) Kiểm tra xem người dùng có còn tồn tại trong DB không
+    // 3) Kiểm tra xem người dùng có còn tồn tại không
     const currentUser = await User.findByPk(decoded.id);
-    if (!currentUser) {
-        return next(
-            new AppError('Người dùng sở hữu token này không còn tồn tại.', 401)
-        );
+    if (!currentUser || currentUser.status !== 'active') { // Thêm kiểm tra status
+        return next(new AppError('Người dùng sở hữu token này không còn tồn tại hoặc đã bị khóa.', 401));
     }
 
-    // 4) (Nâng cao) Kiểm tra xem người dùng có đổi mật khẩu sau khi token được cấp không
-    //    Để làm được điều này, model User của bạn cần có một trường `passwordChangedAt`
-    //    if (currentUser.changedPasswordAfter(decoded.iat)) {
-    //        return next(
-    //            new AppError('Mật khẩu đã được thay đổi gần đây. Vui lòng đăng nhập lại.', 401)
-    //        );
-    //    }
+    // 4) (Nâng cao) Kiểm tra đổi mật khẩu
+    // if (currentUser.changedPasswordAfter(decoded.iat)) { ... }
 
     // CẤP QUYỀN TRUY CẬP
-    // Gắn thông tin người dùng đã được xác thực vào đối tượng `req`
-    // để các middleware hoặc controller sau đó có thể sử dụng.
     req.user = currentUser;
-    next(); // Nếu mọi thứ đều ổn, đi đến middleware/controller tiếp theo
+    res.locals.user = currentUser; // Gắn vào res.locals để có thể dùng trong template engine (nếu có)
+    next();
 });
 
-// Middleware này giống hệt `protect`, nhưng nếu không có token, nó chỉ đơn giản là next()
-// mà không báo lỗi. Điều này cho phép các route sau đó kiểm tra `if (req.user)`...
+/**
+ * Middleware kiểm tra người dùng một cách "lỏng lẻo".
+ * Nếu có token hợp lệ -> gắn req.user. Nếu không -> bỏ qua.
+ * Phiên bản nâng cấp để xử lý 2 loại cookie.
+ */
 exports.checkUser = catchAsync(async (req, res, next) => {
-    // 1) Lấy token
     let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.jwt) {
-        token = req.cookies.jwt;
+    // Tương tự, ưu tiên kiểm tra admin trước rồi đến user
+    const scope = req.headers['x-auth-scope'];
+
+    if (scope === 'admin') {
+        token = req.cookies.jwt_admin;
+    } else if (scope === 'user') {
+        token = req.cookies.jwt_user;
     }
 
-    // Nếu không có token, cứ đi tiếp
     if (!token) {
-        return next();
+        return next(); // Không có token, đi tiếp
     }
 
     try {
-        // 2) Xác thực token
         const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-
-        // 3) Tìm user
         const currentUser = await User.findByPk(decoded.id);
-        if (!currentUser) {
-            return next();
-        }
 
-        // 4) Gắn user vào request
-        req.user = currentUser;
-        res.locals.user = currentUser;
-        next();
+        if (currentUser && currentUser.status === 'active') {
+            // Chỉ gắn user nếu họ tồn tại và tài khoản active
+            req.user = currentUser;
+            res.locals.user = currentUser;
+        }
     } catch (err) {
-        // Nếu token không hợp lệ, cũng cứ đi tiếp
-        return next();
+        // Token không hợp lệ -> bỏ qua, không báo lỗi
     }
+
+    return next();
 });
 
+
+/**
+ * Middleware giới hạn quyền truy cập theo vai trò.
+ * Không cần thay đổi. Nó hoạt động dựa trên req.user đã được 'protect' tạo ra.
+ */
 exports.restrictTo = (...roles) => {
     return (req, res, next) => {
-        // `req.user` được tạo ra từ middleware `protect` chạy trước đó.
-        // `roles` là một mảng: ['admin', 'staff'].
-        if (!roles.includes(req.user.role)) {
-            return next(
-                new AppError('Bạn không có quyền thực hiện hành động này.', 403) // 403 Forbidden
-            );
+        if (!req.user || !roles.includes(req.user.role)) {
+            return next(new AppError('Bạn không có quyền thực hiện hành động này.', 403));
         }
         next();
     };

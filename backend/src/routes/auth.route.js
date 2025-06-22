@@ -6,5 +6,6 @@ const authController = require('../controllers/auth.controller');
 // [POST] /api/auth/login
 router.post('/login', authController.login);
 router.get('/logout', authController.logout);
-console.log('--- Trong auth.route.js, sắp export router có kiểu là:', typeof router);
+router.post('/admin/login', authController.loginAdmin);
+router.get('/admin/logout', authController.logoutAdmin);
 module.exports = router;
