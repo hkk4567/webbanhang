@@ -59,7 +59,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
         whereCondition.name = { [Op.like]: `%${search}%` };
     }
     if (categoryId) {
-        whereCondition.categoryId = categoryId;
+        whereCondition.categoryId = req.query.categoryId;
     }
 
     // --- LOGIC XỬ LÝ GIÁ (ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT) ---
