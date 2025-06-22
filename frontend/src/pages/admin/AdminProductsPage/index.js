@@ -8,7 +8,7 @@ import Pagination from '../../../components/common/Pagination';
 import ProductFormModal from './components/ProductFormModal';
 import { usePagination } from '../../../hooks/usePaginationAPI';
 import { useDebounce } from '../../../hooks/useDebounce';
-import { getProducts, getCategories, createProduct, updateProduct, deleteProduct } from '../../../api/productService';
+import { getAdminProducts, getCategories, createProduct, updateProduct, deleteProduct } from '../../../api/productService';
 
 const cx = classNames.bind(styles);
 const ITEMS_PER_PAGE = 10;
@@ -35,7 +35,7 @@ function AdminProductsPage() {
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
     const [filterCategory, setFilterCategory] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
-    const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'DESC' });
+    const [sortOrder, setSortOrder] = useState('-created_at');
     const { requestedPage, paginationProps, goToPage } = usePagination(paginationData);
 
     // --- STATE MODAL ---
@@ -56,17 +56,19 @@ function AdminProductsPage() {
                 search: debouncedSearchTerm,
                 categoryId: filterCategory,
                 status: filterStatus,
-                sort: `${sortConfig.direction === 'DESC' ? '-' : ''}${sortConfig.key}`,
+                sort: sortOrder,
             };
 
             const [prodResponse, catResponse] = await Promise.all([
-                getProducts(params),
-                getCategories() // Chỉ gọi nếu chưa có
+                getAdminProducts(params),
+                categories.length === 0 ? getCategories() : Promise.resolve(null),
             ]);
 
             setProducts(prodResponse.data.data.products);
             setPaginationData(prodResponse.data.data.pagination);
-            setCategories(catResponse.data.data.categories);
+            if (catResponse) {
+                setCategories(catResponse.data.data.categories);
+            }
 
         } catch (err) {
             setError('Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -74,7 +76,7 @@ function AdminProductsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [requestedPage, debouncedSearchTerm, filterCategory, filterStatus, sortConfig]);
+    }, [requestedPage, debouncedSearchTerm, filterCategory, filterStatus, sortOrder, categories.length]);
 
     // Effect gọi API chính
     useEffect(() => {
@@ -84,14 +86,21 @@ function AdminProductsPage() {
     // Effect reset trang khi bộ lọc thay đổi
     useEffect(() => {
         goToPage(1);
-    }, [debouncedSearchTerm, filterCategory, filterStatus, sortConfig, goToPage]);
+    }, [debouncedSearchTerm, filterCategory, filterStatus, sortOrder, goToPage]);
 
     // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
     const handleSortRequest = (key) => {
-        setSortConfig(prevConfig => ({
-            key,
-            direction: prevConfig.key === key && prevConfig.direction === 'ASC' ? 'DESC' : 'ASC',
-        }));
+        // key bây giờ là 'name', 'price', 'status', 'quantity', 'created_at'
+        const currentSort = sortOrder;
+
+        // Nếu đang sắp xếp theo key này và là tăng dần, đổi thành giảm dần
+        if (currentSort === `${key}-asc` || currentSort === key) {
+            setSortOrder(`${key}-desc`);
+        }
+        // Ngược lại, đổi thành tăng dần
+        else {
+            setSortOrder(`${key}-asc`);
+        }
     };
 
     const handleCloseModals = () => {
@@ -155,8 +164,12 @@ function AdminProductsPage() {
 
     // --- CÁC HÀM HỖ TRỢ RENDER ---
     const getSortIcon = (key) => {
-        if (sortConfig.key !== key) return <i className="bi bi-arrow-down-up ms-1 text-muted"></i>;
-        return sortConfig.direction === 'ASC' ? <i className="bi bi-sort-up ms-1"></i> : <i className="bi bi-sort-down ms-1"></i>;
+        if (sortOrder.includes(key)) {
+            return sortOrder.endsWith('-asc') ?
+                <i className="bi bi-sort-up ms-1"></i> :
+                <i className="bi bi-sort-down ms-1"></i>;
+        }
+        return <i className="bi bi-arrow-down-up ms-1 text-muted"></i>;
     };
 
     const renderStatusBadge = (status) => {
@@ -213,7 +226,7 @@ function AdminProductsPage() {
                     <div className="card-body">
                         <div className="table-responsive">
                             <table className="table table-hover align-middle">
-                                <thead className="table-light">
+                                <thead className="table-light" style={{ userSelect: 'none' }}>
                                     <tr>
                                         <th>STT</th>
                                         <th onClick={() => handleSortRequest('name')} className="cursor-pointer">Tên sản phẩm {getSortIcon('name')}</th>

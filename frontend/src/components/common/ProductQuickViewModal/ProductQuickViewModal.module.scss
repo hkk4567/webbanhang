@@ -26,3 +26,28 @@
         color: #333;
     }
 }
+
+.category-link {
+    color: #e89f5d;
+    /* Màu xanh bootstrap hoặc màu thương hiệu của bạn */
+    text-decoration: none;
+    margin-left: 10px;
+    /* Bỏ gạch chân */
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    /* Hiệu ứng chuyển động mượt mà */
+}
+
+/* Hiệu ứng khi rê chuột vào */
+.category-link:hover {
+    color: #e89f5d;
+    text-decoration: underline;
+    /* Thêm lại gạch chân khi hover */
+}
+
+/* Style cho text "Chưa phân loại" */
+.category-unclassified {
+    color: #6c757d;
+    /* Màu xám, thể hiện sự không active */
+    font-style: italic;
+}

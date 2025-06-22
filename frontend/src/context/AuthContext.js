@@ -1,37 +1,68 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { loginApi, logoutApi, getMeApi } from '../api/authService'; // Giả sử API nằm ở đây
 
-// Tạo Context
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
-// Tạo Provider Component
-// Component này sẽ "bao bọc" toàn bộ ứng dụng của bạn
-export function AuthProvider({ children }) {
-    // Sử dụng state để lưu trạng thái đăng nhập.
-    // Trong ứng dụng thực tế, bạn sẽ khởi tạo giá trị này từ localStorage hoặc cookie.
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [user, setUser] = useState(null);
-    // Hàm để đăng nhập
-    const login = (userData) => {
-        const mockUserData = userData || {
-            name: 'Nguyen Van A',
-            email: 'nguyenvana@example.com',
-        };
-        setIsLoggedIn(true);
-        setUser(mockUserData);
-    };
-
-    // Hàm để đăng xuất
-    const logout = () => {
-        setIsLoggedIn(false);
-        setUser(null);
-    };
-
-    const value = { isLoggedIn, user, login, logout };
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-// Tạo một custom hook để dễ dàng sử dụng context ở các component khác
 export function useAuth() {
     return useContext(AuthContext);
+}
+
+export function AuthProvider({ children }) {
+    const [user, setUser] = useState(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [loading, setLoading] = useState(true); // Trạng thái kiểm tra session ban đầu
+
+    useEffect(() => {
+        const checkUserSession = async () => {
+            try {
+                // Thử gọi API /users/me để lấy thông tin user nếu có cookie hợp lệ
+                const response = await getMeApi();
+                setUser(response.data.data.user);
+                setIsLoggedIn(true);
+            } catch (error) {
+                // Lỗi (thường là 401) có nghĩa là không có session hợp lệ
+                setUser(null);
+                setIsLoggedIn(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkUserSession();
+    }, []);
+
+    const login = async (email, password) => {
+        // Hàm login này trả về user data để component có thể kiểm tra quyền
+        const response = await loginApi(email, password);
+        const loggedInUser = response.data.data.user;
+        setUser(loggedInUser);
+        setIsLoggedIn(true);
+        return loggedInUser; // Trả về user data
+    };
+
+    const logout = async () => {
+        try {
+            await logoutApi();
+        } catch (error) {
+            console.error("Lỗi khi đăng xuất API:", error);
+        } finally {
+            // Dù API có lỗi, vẫn phải xóa thông tin ở client
+            setUser(null);
+            setIsLoggedIn(false);
+        }
+    };
+
+    const value = {
+        user,
+        isLoggedIn,
+        loading,
+        login,
+        logout,
+    };
+
+    return (
+        <AuthContext.Provider value={value}>
+            {!loading && children}
+        </AuthContext.Provider>
+    );
 }

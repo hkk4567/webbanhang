@@ -1,18 +1,24 @@
 // src/components/Layout/AdminLayout/components/AdminHeader.js
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Container, Nav, Dropdown, Button, Badge } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCoffee, faBell, faUserCircle, faCogs, faSignOutAlt, faBars } from '@fortawesome/free-solid-svg-icons';
 import classNames from 'classnames/bind';
 import styles from './header.module.scss'; // Đổi tên file import nếu cần
-import { useAdminAuth } from '../../../../context/AdminAuthContext';
+import { useAuth } from '../../../../context/AuthContext';
 
 const cx = classNames.bind(styles);
 
 function AdminHeader({ onToggleSidebar }) {
-    const { adminUser, adminLogout } = useAdminAuth();
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const handleLogout = () => {
+        logout();
+        // Sau khi admin đăng xuất, nên điều hướng về trang đăng nhập của admin
+        navigate('/admin/login');
+    };
     return (
         // Áp dụng các class utility của Bootstrap
         <Navbar
@@ -63,8 +69,8 @@ function AdminHeader({ onToggleSidebar }) {
 
                         <Dropdown.Menu className={cx('user-dropdown-menu')}>
                             <div className="text-center px-3 pt-2 pb-3">
-                                <h6 className="mb-1 fw-bold">{adminUser ? adminUser.fullName : 'Admin User'}</h6>
-                                <small className="text-muted">{adminUser ? adminUser.email : 'admin@example.com'}</small>
+                                <h6 className="mb-1 fw-bold">{user ? user.fullName : 'Admin User'}</h6>
+                                <small className="text-muted">{user ? user.email : 'admin@example.com'}</small>
                             </div>
                             <Dropdown.Divider className="mx-2" />
                             {/* Sử dụng class custom đã định nghĩa */}
@@ -75,7 +81,7 @@ function AdminHeader({ onToggleSidebar }) {
                                 <FontAwesomeIcon icon={faCogs} /> Cài đặt
                             </Dropdown.Item>
                             <Dropdown.Divider className="mx-2" />
-                            <Dropdown.Item as="button" onClick={adminLogout} className={cx('dropdown-item-logout')}>
+                            <Dropdown.Item as="button" onClick={handleLogout} className={cx('dropdown-item-logout')}>
                                 <FontAwesomeIcon icon={faSignOutAlt} /> Đăng xuất
                             </Dropdown.Item>
                         </Dropdown.Menu>

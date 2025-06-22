@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 // Import các hàm API
-import { loginApi, logoutApi, getMeApi } from '../api/apiService';
+import { loginApi, logoutApi, getMeApi } from '../api/authService';
 
 const AdminAuthContext = createContext();
 

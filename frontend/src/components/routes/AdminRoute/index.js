@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAdminAuth } from '../../../context/AdminAuthContext'; // Sử dụng context của Admin
+import { useAuth } from '../../../context/AuthContext';// Sử dụng context của Admin
 
 // Component Spinner để hiển thị trong lúc chờ kiểm tra session
 const FullPageSpinner = () => {
@@ -13,7 +13,7 @@ const FullPageSpinner = () => {
 };
 
 function AdminRoute({ children }) {
-    const { adminUser, loading } = useAdminAuth(); // Lấy cả `adminUser` và `loading` từ context
+    const { user, isLoggedIn, loading } = useAuth();// Lấy cả `adminUser` và `loading` từ context
     const location = useLocation();
 
     // 1. Trong khi đang kiểm tra session, hiển thị một màn hình chờ
@@ -22,16 +22,10 @@ function AdminRoute({ children }) {
         return <FullPageSpinner />;
     }
 
-    // 2. Kiểm tra xem có người dùng đăng nhập VÀ có đúng quyền hay không
-    const isAuthenticated = adminUser && (adminUser.role === 'admin' || adminUser.role === 'staff');
-
-    if (!isAuthenticated) {
-        // Nếu chưa đăng nhập hoặc không có quyền, điều hướng về trang đăng nhập của admin
-        // Lưu lại trang họ muốn vào để có thể quay lại sau khi đăng nhập thành công
+    if (!isLoggedIn || !user || (user.role !== 'admin' && user.role !== 'staff')) {
         return <Navigate to="/admin/login" state={{ from: location }} replace />;
     }
 
-    // 3. Nếu mọi thứ đều ổn, hiển thị trang được bảo vệ
     return children;
 }
 

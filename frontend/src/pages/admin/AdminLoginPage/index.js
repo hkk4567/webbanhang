@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import classNames from 'classnames/bind';
-import { Form, InputGroup, Button, Spinner } from 'react-bootstrap'; // Import thêm các component cần thiết
+import { Form, InputGroup, Button, Spinner, Alert } from 'react-bootstrap'; // Import thêm các component cần thiết
 import styles from './AdminLoginPage.module.scss';
-import { useAdminAuth } from '../../../context/AdminAuthContext';
+import { useAuth } from '../../../context/AuthContext';
 
 const cx = classNames.bind(styles);
 
@@ -14,9 +14,10 @@ function AdminLoginPage() {
     const [isLoading, setIsLoading] = useState(false); // State cho trạng thái loading
     const [showPassword, setShowPassword] = useState(false); // State để hiện/ẩn mật khẩu
 
-    const { adminLogin } = useAdminAuth();
+    const { login } = useAuth(); // <<-- SỬ DỤNG useAuth và lấy hàm `login`
     const navigate = useNavigate();
-
+    const location = useLocation();
+    const from = location.state?.from?.pathname || '/admin/dashboard';
     // Hàm xử lý chung cho các ô input
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -29,25 +30,23 @@ function AdminLoginPage() {
         setIsLoading(true);
 
         try {
-            // Bây giờ adminLogin là một hàm async thực sự
-            // Nó sẽ trả về user data nếu thành công, hoặc ném ra lỗi nếu thất bại
-            await adminLogin(credentials.email, credentials.password);
+            // Gọi hàm login chung từ AuthContext
+            const user = await login(credentials.email, credentials.password);
 
-            // Nếu không có lỗi nào được ném ra, điều hướng đến dashboard
-            navigate('/admin/dashboard');
+            // KIỂM TRA QUYỀN TRUY CẬP TRANG ADMIN
+            if (user.role !== 'admin' && user.role !== 'staff') {
+                // Nếu không có quyền, ném ra lỗi để khối catch xử lý
+                // Không cần logout ở đây vì họ chưa thực sự vào được trang admin
+                throw new Error('Tài khoản của bạn không có quyền truy cập trang quản trị.');
+            }
+
+            // Nếu đăng nhập và phân quyền thành công, điều hướng đến trang dashboard
+            // hoặc trang họ đang cố gắng truy cập
+            navigate(from, { replace: true });
 
         } catch (err) {
             // Xử lý các loại lỗi khác nhau
-            if (err.name === 'AuthorizationError') {
-                // Lỗi phân quyền do context ném ra
-                setError(err.message);
-            } else if (err.response && err.response.data) {
-                // Lỗi từ API của axios (ví dụ: 401 Unauthorized, 400 Bad Request)
-                setError(err.response.data.message || 'Email hoặc mật khẩu không chính xác.');
-            } else {
-                // Các lỗi mạng khác
-                setError('Đã xảy ra lỗi mạng. Vui lòng thử lại.');
-            }
+            setError(err.response?.data?.message || err.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
         } finally {
             setIsLoading(false);
         }
@@ -92,7 +91,7 @@ function AdminLoginPage() {
                         </Button>
                     </InputGroup>
 
-                    {error && <div className={cx('error-message', 'alert', 'alert-danger')}>{error}</div>}
+                    {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
 
                     <Button type="submit" className={cx('submit-btn')} disabled={isLoading}>
                         {isLoading ? (

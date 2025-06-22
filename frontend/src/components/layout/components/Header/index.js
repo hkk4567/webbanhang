@@ -3,84 +3,62 @@ import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 
+// Import các context
 import { useCart } from '../../../../context/CartContext';
-import { useAuth } from '../../../../context/AuthContext';
+import { useAuth } from '../../../../context/AuthContext';// Dùng chung context admin cho user hoặc tạo AuthContext riêng
+import CartItem from '../../../../components/common/CartItem';
+// Import các thành phần UI
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import CartItem from '../../../common/CartItem';
-import {
-    faBars,
-    faMugHot,
-    faMagnifyingGlass,
-    faCartShopping,
-    faUser,
-    faRightFromBracket
-} from '@fortawesome/free-solid-svg-icons';
+import { faBars, faMugHot, faMagnifyingGlass, faCartShopping, faUser, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+
 const cx = classNames.bind(styles);
-
-// Hàm tiện ích để định dạng tiền tệ
-const formatCurrency = (amount) => amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-
 function Header() {
-    // === STATE MANAGEMENT ===
+    // === STATE CỦA COMPONENT ===
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [isSearchOpen, setSearchOpen] = useState(false);
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
-
-    // --- THÊM STATE ĐỂ LƯU TỪ KHÓA TÌM KIẾM ---
     const [searchTerm, setSearchTerm] = useState('');
-    const navigate = useNavigate(); // Hook để điều hướng
+    const navigate = useNavigate();
 
-    // Dữ liệu giả lập
-    const { isLoggedIn, user, logout } = useAuth();
-    const { cartItems, cartItemCount, totalPrice, updateQuantity, removeFromCart } = useCart();
+    // === LẤY DỮ LIỆU TỪ CONTEXT ===
+    // Dùng đúng tên biến từ Auth context
+    const { user, isLoggedIn, logout } = useAuth();
+    // Dùng đúng tên biến từ Cart context
+    const { items: cartItems, totalItems, totalPrice, updateQuantity, removeFromCart } = useCart();
 
-    // === EVENT HANDLERS FOR CART ===
-    const handleCartQuantityChange = (itemId, newQuantity) => {
-        if (newQuantity < 1) {
-            removeFromCart(itemId);
-        } else {
-            updateQuantity(itemId, newQuantity);
-        }
-    };
-
-    // === EFFECTS ===
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, []);
-
-    // --- HÀM XỬ LÝ KHI SUBMIT FORM TÌM KIẾM ---
+    // === CÁC HÀM XỬ LÝ SỰ KIỆN ===
     const handleSearchSubmit = (e) => {
-        e.preventDefault(); // Ngăn form tải lại trang
+        e.preventDefault();
         if (searchTerm.trim()) {
-            // Nếu có từ khóa, điều hướng đến trang search với query
-            navigate(`/search?q=${searchTerm}`);
-            // Đóng ô tìm kiếm sau khi submit
+            navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
             setSearchOpen(false);
-            // Xóa nội dung ô tìm kiếm
             setSearchTerm('');
         }
     };
 
     const handleLogout = () => {
-        logout(); // Gọi hàm logout từ context
-        setUserMenuOpen(false); // Đóng menu user
-        navigate('/'); // Điều hướng về trang chủ
+        logout();
+        setUserMenuOpen(false);
+        navigate('/');
     };
 
-    // Hàm đóng tất cả các menu con
     const closeAllMenus = () => {
         setMenuOpen(false);
         setSearchOpen(false);
         setUserMenuOpen(false);
     };
 
+    // === EFFECT ĐỂ THEO DÕI SCROLL ===
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 50);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const formatCurrency = (amount) => Number(amount).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
     return (
         <header className={cx('header', { 'header--scroll': isScrolled })}>
             <div className="container h-100">
@@ -197,7 +175,6 @@ function Header() {
                     {/* 4. Right Box (Search, Cart, User) */}
                     <div className="col-lg-2 col-md-2 col-2">
                         <div className={cx('right-box')}>
-
                             {/* Search */}
                             <div className={cx('search')}>
                                 <FontAwesomeIcon icon={faMagnifyingGlass} onClick={() => setSearchOpen(!isSearchOpen)} />
@@ -211,30 +188,33 @@ function Header() {
                                                 placeholder="Tìm kiếm..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                                autoFocus // Tự động focus vào ô input khi nó xuất hiện
+                                                autoFocus
                                             />
                                         </div>
-                                        <Link to="/multiSearch">Tìm kiếm nâng cao</Link>
                                     </form>
                                 )}
                             </div>
 
-                            {/* Cart (Dropdown vẫn dùng :hover từ SCSS) */}
+                            {/* Cart (Sử dụng component CartDropdown) */}
                             <div className={cx('cart')}>
-                                <Link to="/cart" onClick={closeAllMenus} className={cx('cart-icon')}><FontAwesomeIcon icon={faCartShopping} /></Link>
-                                {cartItemCount > 0 && <span className={cx('cart-number')}>{cartItemCount}</span>}
+                                <Link to="/cart" onClick={closeAllMenus} className={cx('cart-icon')}>
+                                    <FontAwesomeIcon icon={faCartShopping} />
+                                </Link>
+                                {totalItems > 0 && <span className={cx('cart-number')}>{totalItems}</span>}
 
-                                <div className={cx('dropdown-cart', { 'no-items': cartItemCount === 0 })}>
-                                    {cartItemCount > 0 ? (
+                                <div className={cx('dropdown-cart', { 'no-items': !cartItems || cartItems.length === 0 })}>
+                                    {cartItems && cartItems.length > 0 ? (
                                         <>
-                                            <h4 className={cx('dropdown-cart-header')}>Giỏ hàng</h4>
+                                            <h4 className={cx('dropdown-cart-header')}>Sản phẩm đã thêm</h4>
                                             <ul className={cx('dropdown-cart-list')}>
-                                                {/* --- SỬA 3: RENDER BẰNG COMPONENT CartItem --- */}
+                                                {/* Vòng lặp để render các CartItem */}
                                                 {cartItems.map(item => (
                                                     <CartItem
-                                                        key={item.id}
+                                                        // Sửa key thành productId để đảm bảo là duy nhất
+                                                        key={item.productId}
                                                         item={item}
-                                                        onQuantityChange={handleCartQuantityChange}
+                                                        // Truyền các hàm xử lý xuống props
+                                                        onQuantityChange={updateQuantity}
                                                         onRemove={removeFromCart}
                                                     />
                                                 ))}
@@ -245,7 +225,7 @@ function Header() {
                                                     <span className={cx('price-color')}>{formatCurrency(totalPrice)}</span>
                                                 </div>
                                                 <div className={cx('dropdown-cart-pay')}>
-                                                    <Link to="/cart" className={cx('link-payMoney')} onClick={() => { /* đóng dropdown nếu cần */ }}>Xem giỏ hàng chi tiết</Link>
+                                                    <Link to="/cart" className={cx('link-payMoney')}>Xem giỏ hàng</Link>
                                                 </div>
                                             </div>
                                         </>
@@ -262,20 +242,18 @@ function Header() {
                                 <FontAwesomeIcon icon={faUser} onClick={() => setUserMenuOpen(!isUserMenuOpen)} />
                                 {isUserMenuOpen && (
                                     <>
-                                        {/* --- SỬA 4: SỬ DỤNG STATE isLoggedIn THẬT --- */}
                                         {!isLoggedIn ? (
                                             <ul className={cx('dropdown-user')}>
-                                                <li><Link to="/login" onClick={() => setUserMenuOpen(false)}>Đăng nhập</Link></li>
-                                                <li><Link to="/register" onClick={() => setUserMenuOpen(false)}>Đăng ký</Link></li>
+                                                <li><Link to="/login" onClick={closeAllMenus}>Đăng nhập</Link></li>
+                                                <li><Link to="/register" onClick={closeAllMenus}>Đăng ký</Link></li>
                                             </ul>
                                         ) : (
                                             <div className={cx('dropdown-user-info')}>
-                                                <div className={cx('dropdown-user-info-name')}>Xin chào, {user?.name || 'Bạn'}</div>
+                                                <div className={cx('dropdown-user-info-name')}>Xin chào, {user?.fullName || 'Bạn'}</div>
                                                 <div className={cx('dropdown-user-info-email')}>{user?.email}</div>
                                                 <div className={cx('dropdown-user-info-history')}>
-                                                    <Link to="/history" onClick={() => setUserMenuOpen(false)}>Lịch sử mua hàng</Link>
+                                                    <Link to="/history" onClick={closeAllMenus}>Lịch sử mua hàng</Link>
                                                 </div>
-                                                {/* --- SỬA 5: THÊM onClick VÀO NÚT ĐĂNG XUẤT --- */}
                                                 <div className={cx('dropdown-user-info-logout')} onClick={handleLogout}>
                                                     <FontAwesomeIcon icon={faRightFromBracket} /> Đăng xuất
                                                 </div>

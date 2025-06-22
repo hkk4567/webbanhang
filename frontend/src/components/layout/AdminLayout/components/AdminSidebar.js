@@ -1,11 +1,11 @@
 // src/components/Layout/AdminLayout/components/AdminSidebar.js
 
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Nav, Accordion, Offcanvas } from 'react-bootstrap'; // <-- Import các component chính
 import classNames from 'classnames/bind';
 import styles from './sidebar.module.scss'; // Đổi tên file scss cho nhất quán
-import { useAdminAuth } from '../../../../context/AdminAuthContext';
+import { useAuth } from '../../../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faTachometerAlt, faUsers, faBoxOpen, faMugHot, faSignOutAlt, faLayerGroup
@@ -15,7 +15,18 @@ const cx = classNames.bind(styles);
 
 // Nhận props từ AdminLayout để điều khiển việc hiển thị
 function AdminSidebar({ isMobileOpen, onHide }) {
-    const { adminLogout } = useAdminAuth();
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        // Sau khi admin đăng xuất, nên điều hướng về trang đăng nhập của admin
+        navigate('/admin/login');
+        // Nếu đang ở màn hình mobile, đóng sidebar sau khi logout
+        if (onHide) {
+            onHide();
+        }
+    };
     const getNavLinkClass = ({ isActive }) => {
         // cx('nav-link') -> Luôn có class nav-link của module
         // { [styles.active]: isActive } -> Thêm class active của module NẾU isActive là true
@@ -70,7 +81,7 @@ function AdminSidebar({ isMobileOpen, onHide }) {
 
             {/* Logout */}
             <Nav.Item>
-                <Nav.Link as="button" onClick={adminLogout} className={cx('nav-link', 'logout-btn')}>
+                <Nav.Link as="button" onClick={handleLogout} className={cx('nav-link', 'logout-btn')}>
                     <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faSignOutAlt} /></span>
                     <span>Đăng xuất</span>
                 </Nav.Link>

@@ -1,67 +1,58 @@
 import React from 'react';
 import classNames from 'classnames/bind';
 import styles from './CartItem.module.scss';
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
+const formatCurrency = (amount) => Number(amount).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
-// Hàm tiện ích để định dạng tiền tệ
-const formatCurrency = (amount) => amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-
-/**
- * Component hiển thị một sản phẩm trong giỏ hàng.
- * @param {object} props
- * @param {object} props.item - Dữ liệu sản phẩm (id, name, image, price, quantity, slug)
- * @param {function} props.onQuantityChange - Hàm được gọi khi thay đổi số lượng, nhận (itemId, newQuantity)
- * @param {function} props.onRemove - Hàm được gọi khi xóa sản phẩm, nhận (itemId)
- */
 function CartItem({ item, onQuantityChange, onRemove }) {
+    // Kiểm tra an toàn
+    if (!item) return null;
 
-    // Xử lý khi nhấn nút giảm số lượng
+    // Sử dụng productId để thao tác
     const handleDecrease = () => {
-        onQuantityChange(item.id, item.quantity - 1);
+        onQuantityChange(item.productId, item.quantity - 1);
     };
 
-    // Xử lý khi nhấn nút tăng số lượng
     const handleIncrease = () => {
-        onQuantityChange(item.id, item.quantity + 1);
+        onQuantityChange(item.productId, item.quantity + 1);
     };
 
-    // Xử lý khi nhấn nút xóa
     const handleRemove = () => {
-        onRemove(item.id);
+        onRemove(item.productId);
     };
 
     return (
+        // Component này giờ có thể dùng cho cả trang giỏ hàng và dropdown
+        // Chúng ta có thể thêm prop `variant` để thay đổi style nếu cần
+        // Ví dụ: <CartItem variant="dropdown" ... />
         <li className={cx('cart-item')}>
-            {/* Ảnh sản phẩm */}
             <div className={cx('item-image')}>
-                <img src={item.image} alt={item.name} />
+                <img src={item.imageUrl} alt={item.name} />
             </div>
 
-            {/* Thông tin sản phẩm */}
             <div className={cx('item-content')}>
-                <Link to={`/product/${item.id}`} className={cx('item-name')}>
+                {/* Dẫn link đến trang chi tiết sản phẩm */}
+                <Link to={`/product/${item.productId}`} className={cx('item-name')}>
                     {item.name}
                 </Link>
 
                 {/* Bộ điều khiển số lượng */}
                 <div className={cx('item-quantity')}>
                     <button className={cx('quantity-btn')} onClick={handleDecrease}>-</button>
+                    {/* Input nên là readOnly vì số lượng được quản lý bằng state */}
                     <input className={cx('quantity-input')} type="text" value={item.quantity} readOnly />
                     <button className={cx('quantity-btn')} onClick={handleIncrease}>+</button>
                 </div>
 
-                {/* Giá tiền của một sản phẩm */}
                 <div className={cx('item-price-single')}>
                     {formatCurrency(item.price)}
                 </div>
             </div>
 
-            {/* Tổng tiền và nút xóa */}
             <div className={cx('item-actions')}>
                 <div className={cx('item-price-total')}>
                     {formatCurrency(item.price * item.quantity)}
