@@ -1,9 +1,47 @@
 $primary-color: #c7a17a;
-$dark-color: #222;
-$text-color: #555;
-$border-color: #e0e0e0;
-$status-delivered-color: #28a745;
-$status-cancelled-color: #dc3545;
+$dark-color: #1a1a2e; // Màu xanh đen đậm, rất sang trọng
+$text-color: #8f8f8f; // Màu xám nhạt, hiện đại
+$border-color: rgba(255, 255, 255, 0.1); // Border màu sáng để dùng trên nền tối
+$light-bg-color: #f5f5f7; // Nền trắng ngà của Apple, rất sạch sẽ
+
+// Định nghĩa màu trạng thái có chiều sâu hơn
+$status-delivered: (
+    color: #2ecc71,
+    glow: rgba(46, 204, 113, 0.35)
+);
+$status-cancelled: (
+    color: #e74c3c,
+    glow: rgba(231, 76, 60, 0.35)
+);
+$status-pending: (
+    color: #f39c12,
+    glow: rgba(243, 156, 18, 0.35)
+);
+
+@keyframes card-enter {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Animation cho các item bên trong lần lượt xuất hiện
+@keyframes item-fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
 
 @import '../Main.module.scss';
 
@@ -25,105 +63,185 @@ $status-cancelled-color: #dc3545;
 }
 
 // History Item
+// 1. Card chính - giống như một tấm thẻ kim loại mờ
 .history-user {
-    border: 1px solid $border-color;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    padding: 20px;
-    margin-bottom: 30px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)); // Hiệu ứng gradient mờ
+    backdrop-filter: blur(10px); // Hiệu ứng kính mờ (nếu nền body có ảnh/màu)
+    border: 1px solid rgba(255, 255, 255, 0.1); // Viền kính
+    border-radius: 16px;
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    margin-bottom: 40px;
+
+    // Áp dụng animation trượt vào
+    opacity: 0; // Bắt đầu ẩn
+    animation: card-enter 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 
+// 2. Header - tinh tế & thông tin
 .order-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1rem;
-    padding-bottom: 15px;
-    border-bottom: 1px solid $border-color;
-    margin-bottom: 15px;
+    padding: 20px 25px;
+    // Bỏ border, tạo phân cách bằng không gian
+
+    // Animation riêng cho header
+    opacity: 0;
+    animation: item-fade-in 0.6s ease 0.3s forwards; // Xuất hiện sau khi card trượt vào
+
+    span {
+        color: $text-color;
+    }
+
+    strong {
+        color: $dark-color;
+    }
 }
 
+// 3. Status Badge - nổi bật với hiệu ứng "glow"
 .order-status {
-    padding: 5px 10px;
-    border-radius: 15px;
+    padding: 8px 16px;
+    border-radius: 20px;
     color: white;
     font-size: 0.8rem;
-    font-weight: bold;
-    text-transform: uppercase;
+    font-weight: 600;
 
-    // Status colors
     &.status--đã-giao-hàng {
-        background-color: $status-delivered-color;
+        background: map-get($status-delivered, color);
+        box-shadow: 0 0 15px map-get($status-delivered, glow);
     }
 
     &.status--đã-hủy {
-        background-color: $status-cancelled-color;
+        background: map-get($status-cancelled, color);
+        box-shadow: 0 0 15px map-get($status-cancelled, glow);
     }
 
-    // Thêm các status khác nếu cần
+    &.status--chờ-xử-lý {
+        background: map-get($status-pending, color);
+        box-shadow: 0 0 15px map-get($status-pending, glow);
+    }
 }
+
+// 4. Item Sản phẩm - điểm nhấn chính
+// --- START: Thêm wrapper này vào SCSS ---
+.order-items-list {
+    padding: 0 25px;
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
+}
+
+// --- END: Thêm wrapper ---
 
 .product-history {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px dashed #eee;
+    padding: 20px 0;
 
-    &:last-of-type {
-        border-bottom: none;
+    opacity: 0;
+    animation: item-fade-in 0.6s ease forwards;
+
+    // --- Animation lần lượt cho từng sản phẩm ---
+    // Giả sử có tối đa 5 sản phẩm mỗi đơn
+    @for $i from 1 through 5 {
+        &:nth-child(#{$i}) {
+            animation-delay: #{0.4s + ($i * 0.1s)};
+        }
+    }
+
+    &:not(:last-child) {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 }
 
+// 5. Hình ảnh sản phẩm với hiệu ứng tương tác cao
 .product-history-detail {
     display: flex;
     align-items: center;
+    gap: 1rem;
+
+    // Bọc ảnh để tạo hiệu ứng hover tốt hơn
+    .product-image-container {
+        position: relative;
+        cursor: pointer;
+
+        &::before {
+            // Lớp nền phát sáng khi hover
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 12px;
+            background: radial-gradient(circle, rgba($primary-color, 0.5) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            filter: blur(10px);
+        }
+
+        &:hover::before {
+            opacity: 1;
+        }
+
+        &:hover img {
+            transform: scale(1.1);
+        }
+    }
 
     img {
-        width: 70px;
-        height: 70px;
+        width: 65px;
+        height: 65px;
         object-fit: cover;
-        border-radius: 5px;
-        margin-right: 15px;
+        border-radius: 8px;
+        border: 1px solid $border-color;
+        transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
 }
 
 .product-info {
     .product-name {
-        font-weight: 600;
-        color: $dark-color;
+        font-weight: 500;
+        color: $primary-color;
+        margin-bottom: 4px;
     }
 
     .product-quantity {
-        font-size: 0.9rem;
         color: $text-color;
     }
 }
 
 .product-price {
+    color: $primary-color;
     font-weight: 500;
 }
 
+// 6. Footer - Nút Call-to-Action quan trọng
 .order-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid $border-color;
+    padding: 20px 25px;
+
+    opacity: 0;
+    animation: item-fade-in 0.6s ease 0.9s forwards; // Xuất hiện cuối cùng
 }
 
 .product-history-date {
-    font-size: 0.9rem;
     color: $text-color;
 }
 
 .product-history-total-price {
     font-size: 1.1rem;
     color: $dark-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     strong {
+        font-size: 1.8rem;
+        font-weight: 700;
         color: $primary-color;
+        text-shadow: 0 0 20px rgba($primary-color, 0.6); // Hiệu ứng chữ phát sáng
+        margin-left: 10px;
     }
 }
 

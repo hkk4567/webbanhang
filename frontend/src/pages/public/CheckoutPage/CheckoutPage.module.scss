@@ -241,12 +241,10 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
 
 // --- CỘT PHẢI ---
 .product-list {
-    max-height: 300px; // Giới hạn chiều cao để không làm cột quá dài
-    overflow-y: auto; // Thêm thanh cuộn nếu có nhiều sản phẩm
-    border-top: 1px solid $border-color;
-    border-bottom: 1px solid $border-color;
-    padding: 1rem 0;
-    margin: 1rem 0;
+    max-height: calc(100vh - 450px); // Chiều cao tự động để vừa với cột
+    overflow-y: auto;
+    padding-right: 1rem; // Thêm khoảng trống cho thanh cuộn
+    margin: 1.5rem 0;
 
     // Style cho thanh cuộn (tùy chọn nhưng đẹp hơn)
     &::-webkit-scrollbar {
@@ -254,12 +252,12 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
     }
 
     &::-webkit-scrollbar-track {
-        background: #f1f1f1;
+        background: transparent;
     }
 
     &::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 5px;
+        background: darken($border-color, 10%);
+        border-radius: 6px;
     }
 }
 
@@ -267,17 +265,17 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1rem 0.5rem;
-    border-radius: $border-radius;
-    transition: $base-transition;
+    padding: 1rem 0;
 
+    // Đường kẻ phân cách tinh tế, đồng bộ với price-summary
     &:not(:last-child) {
-        margin-bottom: 0.5rem;
+        border-bottom: 1px solid $border-color;
     }
+}
 
-    &:hover {
-        background-color: rgba($primary-color, 0.05);
-    }
+.product-image-wrapper {
+    position: relative;
+    flex-shrink: 0; // Ngăn ảnh bị co lại
 }
 
 .product-image {
@@ -293,19 +291,79 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
     flex-grow: 1;
 }
 
+.product-quantity-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-image: linear-gradient(to right, $primary-color, $primary-color-dark);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    border: 2px solid $component-bg; // Tạo viền trắng tách khỏi ảnh
+}
+
 .product-name {
     font-weight: 500;
     color: $text-primary;
 }
 
-.product-quantity {
-    font-size: 0.9rem;
-    color: $text-secondary;
-}
-
 .product-price {
     font-weight: 600;
     color: $text-primary;
+}
+
+.price-summary {
+    border-top: 1px solid $border-color;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; // Khoảng cách giữa các dòng
+}
+
+// Tạo một class chung cho các dòng trong summary
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    // Chữ (Tạm tính, Phí vận chuyển)
+    span:first-child {
+        color: $text-secondary;
+    }
+
+    // Con số
+    span:last-child {
+        font-weight: 500;
+        color: $text-primary;
+    }
+}
+
+.total-price {
+    border-top: 1px solid $border-color;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline; // Căn chỉnh chữ và số đẹp hơn
+
+    span:first-child {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    span:last-child {
+        color: $primary-color;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
 }
 
 .discount-code {
@@ -454,6 +512,7 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
         white-space: nowrap; // Ngăn giá tiền bị xuống dòng
     }
 }
+
 .summary-orders-close {
     position: absolute;
     top: 1rem;

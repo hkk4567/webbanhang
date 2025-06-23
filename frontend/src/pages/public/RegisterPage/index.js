@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './RegisterPage.module.scss';
@@ -39,20 +39,19 @@ function RegisterPage() {
 
     // --- EVENT HANDLERS ---
     // Hàm xử lý chung cho các input text
-    const handleChange = (e) => {
+    const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, []);
 
-    // --- SỬA 4: HÀM CALLBACK ĐỂ NHẬN DỮ LIỆU TỪ AddressSelector ---
-    const handleAddressChange = (addressData) => {
+    const handleAddressChange = useCallback((addressData) => {
         setFormData(prev => ({
             ...prev,
             province: addressData.provinceName,
             district: addressData.districtName,
             ward: addressData.wardName,
         }));
-    };
+    }, []);
 
 
     // Hàm validate (giữ nguyên)

@@ -202,16 +202,29 @@ function CheckoutPage() {
                         <div className={cx('product-list')}>
                             {cartItems.map(item => (
                                 <div key={item.productId} className={cx('product-item')}>
-                                    <div className={cx('product-image-wrapper')}><img src={item.imageUrl} alt={item.name} className={cx('product-image')} /><span className={cx('product-quantity-badge')}>{item.quantity}</span></div>
-                                    <div className={cx('product-details')}><div className={cx('product-name')}>{item.name}</div></div>
-                                    <div className={cx('product-price')}>{formatCurrency(Number(item.price) * item.quantity)}</div>
+                                    <div className={cx('product-image-wrapper')}>
+                                        <img src={item.imageUrl} alt={item.name} className={cx('product-image')} />
+                                        <span className={cx('product-quantity-badge')}>{item.quantity}</span>
+                                    </div>
+                                    <div className={cx('product-details')}>
+                                        <div className={cx('product-name')}>{item.name}</div>
+                                    </div>
+                                    <div className={cx('product-price')}>
+                                        {formatCurrency(Number(item.price) * item.quantity)}
+                                    </div>
                                 </div>
                             ))}
                         </div>
                         <hr />
                         <div className={cx('price-summary')}>
-                            <div className="d-flex justify-content-between mb-2"><span>Tạm tính</span><span>{formatCurrency(totalPrice)}</span></div>
-                            <div className="d-flex justify-content-between"><span>Phí vận chuyển</span><span>{formatCurrency(shippingFee)}</span></div>
+                            <div className={cx('summary-line')}>
+                                <span>Tạm tính</span>
+                                <span>{formatCurrency(totalPrice)}</span>
+                            </div>
+                            <div className={cx('summary-line')}>
+                                <span>Phí vận chuyển</span>
+                                <span>{formatCurrency(shippingFee)}</span>
+                            </div>
                         </div>
                         <hr />
                         <div className={cx('total-price')}><span className="fs-5">Tổng cộng</span><span className="fs-4 fw-bold">{formatCurrency(finalTotalPrice)}</span></div>
