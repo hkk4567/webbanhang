@@ -1,44 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
-import styles from '../Main.module.scss'; // Giả sử file SCSS của bạn nằm ở đây
+import styles from '../Main.module.scss'; // Giả sử dùng chung file style từ Main
+import { Form, Button, InputGroup, Spinner, Alert, Row, Col } from 'react-bootstrap';
 
-// Import icon cần thiết từ Font Awesome
+// Import API service để lấy danh mục
+import { getCategories } from '../../../api/productService';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
+import { faAngleRight, faSearch } from '@fortawesome/free-solid-svg-icons';
 
-// Khởi tạo hàm cx để sử dụng CSS Modules
 const cx = classNames.bind(styles);
 
-// Đặt tên component theo chuẩn PascalCase
 function MultiSearch() {
-    // Sử dụng useState để quản lý trạng thái của các input
+    // --- STATE CHO CÁC TRƯỜNG INPUT CỦA FORM ---
     const [searchTerm, setSearchTerm] = useState('');
-    const [productType, setProductType] = useState('');
-    const [priceFrom, setPriceFrom] = useState('');
-    const [priceTo, setPriceTo] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [priceMin, setPriceMin] = useState('');
+    const [priceMax, setPriceMax] = useState('');
+
+    // --- STATE ĐỂ QUẢN LÝ DỮ LIỆU VÀ TRẠNG THÁI TỪ API ---
+    const [categories, setCategories] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const navigate = useNavigate();
-    // Hàm xử lý khi nhấn nút tìm kiếm
-    const handleSearch = () => {
-        // Sử dụng URLSearchParams để xây dựng query string một cách an toàn
+
+    // --- useEffect: LẤY DANH SÁCH DANH MỤC KHI COMPONENT ĐƯỢC RENDER ---
+    useEffect(() => {
+        const fetchCategories = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                // Gọi API getCategories với scope 'user' là phù hợp cho trang công khai
+                const response = await getCategories('user');
+                setCategories(response.data.data.categories);
+            } catch (err) {
+                console.error("Lỗi khi tải danh mục:", err);
+                setError("Không thể tải danh sách danh mục. Vui lòng thử lại sau.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []); // Mảng dependency rỗng `[]` đảm bảo effect này chỉ chạy một lần
+
+    // --- HÀM XỬ LÝ KHI SUBMIT FORM TÌM KIẾM ---
+    const handleSearch = (e) => {
+        e.preventDefault(); // Ngăn form submit và reload lại trang
+
+        // Sử dụng URLSearchParams để xây dựng query string một cách an toàn và sạch sẽ
         const params = new URLSearchParams();
 
         if (searchTerm.trim()) {
             params.append('q', searchTerm.trim());
         }
-        if (productType) {
-            params.append('type', productType);
+        if (selectedCategory) {
+            params.append('categoryId', selectedCategory);
         }
-        if (priceFrom) {
-            params.append('price_from', priceFrom);
+        if (priceMin) {
+            params.append('price_min', priceMin);
         }
-        if (priceTo) {
-            params.append('price_to', priceTo);
+        if (priceMax) {
+            params.append('price_max', priceMax);
         }
 
         const searchQuery = params.toString();
 
-        // Điều hướng đến trang kết quả với các tham số đã xây dựng
+        // Điều hướng đến trang kết quả tìm kiếm với các tham số đã xây dựng
         navigate(`/search?${searchQuery}`);
     };
 
@@ -47,102 +76,105 @@ function MultiSearch() {
             {/* Breadcrumb */}
             <div className={cx('bread-crumb')}>
                 <div className="container">
-                    <div className="row">
-                        <div className="col-12">
+                    <Row>
+                        <Col xs={12}>
                             <ul className={cx('breadrumb')}>
                                 <li className={cx('home')}>
-                                    <Link to="/" >Trang chủ</Link>
+                                    <Link to="/">Trang chủ</Link>
                                     <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
                                 </li>
-                                <li>Trang tìm kiếm</li>
+                                <li>Tìm kiếm nâng cao</li>
                             </ul>
                             <div className={cx('title-page')}>
-                                <span>Tìm kiếm</span>
+                                <span>Tìm kiếm nâng cao</span>
                             </div>
-                        </div>
-                    </div>
+                        </Col>
+                    </Row>
                 </div>
             </div>
 
             {/* Main Search Form */}
             <div className={cx('search-main')}>
                 <div className="container">
-                    <div className="row">
-                        <div className="col-12">
-                            {/* Bọc mỗi group bằng div.mb-3 của Bootstrap để tạo khoảng cách */}
-                            <div className="mb-3">
-                                <label className={cx('search-text-label-input')} htmlFor="search-name">
-                                    Nhập tên sản phẩm:
-                                </label>
-                                <input
-                                    className={cx('input-multi-search', 'form-control')}
-                                    id="search-name"
-                                    type="text"
-                                    placeholder="Nhập tên sản phẩm"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
+                    <Row className="justify-content-center">
+                        <Col lg={8} md={10}>
+                            <div className={cx('search-form-wrapper', 'p-4 p-md-5 border rounded shadow-sm')}>
+                                <h3 className="text-center mb-4">Tìm kiếm sản phẩm</h3>
 
-                            <div className="mb-3">
-                                <label className={cx('search-text-label-input')} htmlFor="search-type">
-                                    Chọn loại sản phẩm:
-                                </label>
-                                <select
-                                    className={cx('input-multi-search', 'form-select')}
-                                    name="search-type"
-                                    id="search-type"
-                                    value={productType}
-                                    onChange={(e) => setProductType(e.target.value)}
-                                >
-                                    <option value="">Chọn loại sản phẩm</option>
-                                    <option value="Cafe">Cafe</option>
-                                    <option value="Nước ép">Nước ép</option>
-                                    <option value="Nước có ga">Nước có ga</option>
-                                    <option value="Cocktail">Cocktail</option>
-                                </select>
-                            </div>
+                                {error && <Alert variant="danger">{error}</Alert>}
 
-                            <div className="mb-3">
-                                <label className={cx('search-text-label-input')}>Nhập khoảng giá sản phẩm:</label>
-                                {/* Dùng flexbox của Bootstrap để sắp xếp các input trên một hàng */}
-                                <div className="d-flex align-items-center">
-                                    <label className={cx('search-from-to', 'me-2')} htmlFor="search-from">
-                                        Từ:
-                                    </label>
-                                    <input
-                                        className="form-control me-3"
-                                        style={{ width: '150px' }}
-                                        type="text"
-                                        id="search-from"
-                                        placeholder="VD: 20000"
-                                        value={priceFrom}
-                                        onChange={(e) => setPriceFrom(e.target.value)}
-                                    />
-                                    <label className={cx('search-from-to', 'me-2')} htmlFor="search-to">
-                                        - Đến:
-                                    </label>
-                                    <input
-                                        className="form-control"
-                                        style={{ width: '150px' }}
-                                        type="text"
-                                        id="search-to"
-                                        placeholder="VD: 100000"
-                                        value={priceTo}
-                                        onChange={(e) => setPriceTo(e.target.value)}
-                                    />
-                                </div>
-                            </div>
+                                <Form onSubmit={handleSearch}>
+                                    <Form.Group className="mb-3" controlId="search-name">
+                                        <Form.Label>Tên sản phẩm</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Nhập tên sản phẩm cần tìm..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </Form.Group>
 
-                            <button
-                                type="button"
-                                className={cx('btn-multi-search', 'btn', 'btn-primary', 'mt-3')}
-                                onClick={handleSearch}
-                            >
-                                Tìm kiếm
-                            </button>
-                        </div>
-                    </div>
+                                    <Form.Group className="mb-3" controlId="search-category">
+                                        <Form.Label>
+                                            Loại sản phẩm
+                                            {isLoading && <Spinner animation="border" size="sm" className="ms-2" />}
+                                        </Form.Label>
+                                        <Form.Select
+                                            value={selectedCategory}
+                                            onChange={(e) => setSelectedCategory(e.target.value)}
+                                            disabled={isLoading}
+                                        >
+                                            <option value="">
+                                                {isLoading ? 'Đang tải danh mục...' : 'Tất cả danh mục'}
+                                            </option>
+                                            {!isLoading && categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>
+                                                    {cat.name}
+                                                </option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+
+                                    <Form.Group className="mb-4">
+                                        <Form.Label>Khoảng giá</Form.Label>
+                                        <Row>
+                                            <Col>
+                                                <InputGroup>
+                                                    <InputGroup.Text>Từ</InputGroup.Text>
+                                                    <Form.Control
+                                                        type="number"
+                                                        placeholder="VD: 20000"
+                                                        value={priceMin}
+                                                        onChange={(e) => setPriceMin(e.target.value)}
+                                                        min="0"
+                                                    />
+                                                </InputGroup>
+                                            </Col>
+                                            <Col>
+                                                <InputGroup>
+                                                    <InputGroup.Text>Đến</InputGroup.Text>
+                                                    <Form.Control
+                                                        type="number"
+                                                        placeholder="VD: 100000"
+                                                        value={priceMax}
+                                                        onChange={(e) => setPriceMax(e.target.value)}
+                                                        min={priceMin || "0"}
+                                                    />
+                                                </InputGroup>
+                                            </Col>
+                                        </Row>
+                                    </Form.Group>
+
+                                    <div className="d-grid">
+                                        <Button type="submit" variant="primary" size="lg">
+                                            <FontAwesomeIcon icon={faSearch} className="me-2" />
+                                            Tìm kiếm
+                                        </Button>
+                                    </div>
+                                </Form>
+                            </div>
+                        </Col>
+                    </Row>
                 </div>
             </div>
         </>

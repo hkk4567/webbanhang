@@ -1,12 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './ProductCard.module.scss';
 import { useCart } from '../../../context/CartContext'; // Giả sử bạn có CartContext
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartPlus } from '@fortawesome/free-solid-svg-icons';
 import { faEye } from '@fortawesome/free-regular-svg-icons';
-
+import { useAuth } from '../../../context/AuthContext';
 const cx = classNames.bind(styles);
 
 // Một URL ảnh placeholder phòng khi sản phẩm không có ảnh
@@ -21,6 +21,8 @@ const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x400.png?text=No+Image
 function ProductCard({ product, onViewProduct, viewMode = 'grid' }) {
     // --- LẤY HÀM addToCart TỪ CONTEXT ---
     const { addToCart } = useCart(); // Giả sử context cung cấp hàm này
+    const { isLoggedIn } = useAuth(); // <<-- LẤY TRẠNG THÁI ĐĂNG NHẬP
+    const navigate = useNavigate(); // Hook để điều hướng
 
     // Kiểm tra xem product có tồn tại không để tránh lỗi
     if (!product) {
@@ -43,17 +45,32 @@ function ProductCard({ product, onViewProduct, viewMode = 'grid' }) {
 
     // Xử lý sự kiện "Thêm vào giỏ"
     const handleAddToCart = (e) => {
-        e.preventDefault(); // Ngăn chặn hành vi mặc định (như điều hướng của Link)
-        e.stopPropagation(); // Ngăn sự kiện nổi bọt lên các phần tử cha
+        e.preventDefault();
+        e.stopPropagation();
 
+        // 1. Kiểm tra trạng thái đăng nhập TRƯỚC TIÊN
+        if (!isLoggedIn) {
+            alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+            // 2. Điều hướng người dùng đến trang đăng nhập
+            navigate('/login');
+            return; // Dừng hàm ở đây
+        }
+
+        // 3. Nếu đã đăng nhập, tiếp tục kiểm tra tồn kho
         if (isOutOfStock) {
             alert("Sản phẩm này hiện đã hết hàng hoặc không có sẵn.");
             return;
         }
 
-        // Gọi hàm từ context với ID và số lượng là 1
-        addToCart(id, 1);
-        alert(`Đã thêm "${name}" vào giỏ hàng!`); // Có thể thay bằng toastify
+        // 4. Nếu mọi thứ đều ổn, gọi hàm từ context
+        try {
+            addToCart(id, 1);
+            // Có thể dùng thư viện toast để thông báo đẹp hơn
+            alert(`Đã thêm "${name}" vào giỏ hàng!`);
+        } catch (error) {
+            // Bắt lỗi từ context (ví dụ: lỗi mạng, lỗi server)
+            alert(error.response?.data?.message || "Không thể thêm sản phẩm, vui lòng thử lại.");
+        }
     };
 
     // Xử lý sự kiện "Xem nhanh"

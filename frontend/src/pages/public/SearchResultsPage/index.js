@@ -1,62 +1,194 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Import thêm useRef
 import { Link, useSearchParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './SearchResultsPage.module.scss';
+import { Spinner, Alert } from 'react-bootstrap';
 
-// Import Font Awesome
+// Import các thành phần và hooks cần thiết
+import Pagination from '../../../components/common/Pagination';
+import ProductCard from '../../../components/common/ProductCard';
+import ProductQuickViewModal from '../../../components/common/ProductQuickViewModal';
+import { usePagination } from '../../../hooks/usePaginationAPI';
+import { getProducts } from '../../../api/productService';
+import { getCategories } from '../../../api/productService'; // Import thêm getCategories
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
 
-// Dữ liệu giả - Trong thực tế, bạn sẽ lấy từ API
-import { usePagination } from '../../../hooks/usePagination';
-import Pagination from '../../../components/common/Pagination';
-import ProductCard from '../../../components/common/ProductCard'; // Import component
-import ProductQuickViewModal from '../../../components/common/ProductQuickViewModal';
-import { mockAllProducts } from '../../../data/products'; // Giả sử bạn có file này
 const cx = classNames.bind(styles);
 const ITEMS_PER_PAGE = 12;
+
 function SearchResultsPage() {
+    // --- STATE CHO UI ---
     const [showModal, setShowModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
-    // --- HÀM ĐỂ MỞ MODAL ---
-    // Hàm này sẽ được truyền xuống cho ProductCard
+
+    // --- STATE CHO DỮ LIỆU TỪ API ---
+    const [searchResults, setSearchResults] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [paginationData, setPaginationData] = useState({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // --- LẤY PARAMS TỪ URL ---
+    const [searchParams] = useSearchParams();
+    const query = searchParams.get('q') || '';
+    const categoryId = searchParams.get('categoryId') || '';
+    const priceMin = searchParams.get('price_min') || '';
+    const priceMax = searchParams.get('price_max') || '';
+
+    // --- HOOKS ---
+    const { requestedPage, paginationProps, goToPage } = usePagination(paginationData);
+    // Ref để theo dõi lần render đầu tiên của component
+    const isInitialMount = useRef(true);
+
+    // --- CÁC EFFECT ---
+
+    // Effect 1: Chỉ chịu trách nhiệm GỌI API lấy sản phẩm
+    // Nó sẽ chạy lại khi một trong các bộ lọc thay đổi, hoặc khi người dùng chuyển trang
+    useEffect(() => {
+        const fetchSearchResults = async () => {
+            // Không tìm kiếm nếu không có bất kỳ tiêu chí nào
+            if (!query && !categoryId && !priceMin && !priceMax) {
+                setIsLoading(false);
+                setSearchResults([]);
+                setPaginationData({});
+                return;
+            }
+
+            setIsLoading(true);
+            setError(null);
+            try {
+                const params = {
+                    page: requestedPage,
+                    limit: ITEMS_PER_PAGE,
+                };
+                if (query) params.search = query;
+                if (categoryId) params.categoryId = categoryId;
+                if (priceMin) params.price_min = priceMin;
+                if (priceMax) params.price_max = priceMax;
+
+                const response = await getProducts(params);
+
+                setSearchResults(response.data.data.products);
+                setPaginationData(response.data.data.pagination);
+
+            } catch (err) {
+                console.error("Lỗi khi tìm kiếm sản phẩm:", err);
+                setError("Không thể tải kết quả tìm kiếm. Vui lòng thử lại.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchSearchResults();
+    }, [query, categoryId, priceMin, priceMax, requestedPage]); // Phụ thuộc vào tất cả các yếu tố có thể trigger việc gọi lại API
+
+    // Effect 2: Chỉ chịu trách nhiệm RESET trang về 1 khi BỘ LỌC thay đổi
+    useEffect(() => {
+        // Ở lần render đầu tiên, `isInitialMount.current` là true.
+        // Chúng ta đánh dấu nó thành false và thoát ra để không reset trang.
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        // Từ những lần render sau, nếu bất kỳ bộ lọc nào thay đổi,
+        // effect này sẽ chạy và gọi goToPage(1).
+        // Hook `usePagination` sẽ xử lý việc chỉ cập nhật `requestedPage` nếu nó khác 1.
+        goToPage(1);
+
+    }, [query, categoryId, priceMin, priceMax, goToPage]); // Phụ thuộc vào các BỘ LỌC và hàm goToPage
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await getCategories('user');
+                setCategories(response.data.data.categories);
+            } catch (err) {
+                console.error("Không thể tải danh mục:", err);
+                // Không cần set lỗi chính ở đây vì nó không phải là chức năng cốt lõi
+            }
+        };
+        fetchCategories();
+    }, []);
+
+
+    // --- CÁC HÀM HANDLER ---
     const handleShowModal = (product) => {
         setSelectedProduct(product);
         setShowModal(true);
     };
-
-    // --- HÀM ĐỂ ĐÓNG MODAL ---
     const handleCloseModal = () => {
         setShowModal(false);
-        setSelectedProduct(null); // Reset sản phẩm đã chọn
+        setSelectedProduct(null);
     };
-    // Lấy query param từ URL (ví dụ: /search?q=cafe)
-    const [searchParams] = useSearchParams();
-    const query = searchParams.get('q') || ''; // Lấy giá trị của 'q'
-    const type = searchParams.get('type') || '';
-    const priceFrom = searchParams.get('price_from') || '';
-    const priceTo = searchParams.get('price_to') || '';
 
-    // useEffect để "tìm kiếm" mỗi khi query thay đổi
-    const searchResults = useMemo(() => {
-        if (!query && !type && !priceFrom && !priceTo) {
-            return [];
+    const renderSearchTitle = () => {
+        if (!query && !categoryId && !priceMin && !priceMax) {
+            return <span>Vui lòng nhập tiêu chí để tìm kiếm</span>;
         }
-        return mockAllProducts.filter((product) => {
-            const nameMatch = query ? product.name.toLowerCase().includes(query.toLowerCase()) : true;
-            const typeMatch = type ? product.category === type : true;
-            const priceFromMatch = priceFrom ? product.price >= Number(priceFrom) : true;
-            const priceToMatch = priceTo ? product.price <= Number(priceTo) : true;
-            return nameMatch && typeMatch && priceFromMatch && priceToMatch;
-        });
-    }, [query, type, priceFrom, priceTo]);
-    //  SỬ DỤNG HOOK PHÂN TRANG VỚI KẾT QUẢ TÌM KIẾM ---
-    const {
-        currentData,
-        currentPage,
-        maxPage,
-        jump
-    } = usePagination(searchResults, ITEMS_PER_PAGE);
+
+        let titleParts = [];
+
+        // 1. Xử lý từ khóa tìm kiếm
+        if (query) {
+            titleParts.push(
+                <React.Fragment key="query">
+                    từ khóa <span className={cx('search-value')}>"{query}"</span>
+                </React.Fragment>
+            );
+        }
+
+        // 2. Xử lý danh mục
+        if (categoryId) {
+            // Tìm tên danh mục từ mảng categories đã fetch
+            const categoryName = categories.find(cat => String(cat.id) === categoryId)?.name;
+            if (categoryName) {
+                titleParts.push(
+                    <React.Fragment key="category">
+                        trong danh mục <span className={cx('search-value')}>{categoryName}</span>
+                    </React.Fragment>
+                );
+            }
+        }
+
+        // 3. Xử lý khoảng giá
+        if (priceMin || priceMax) {
+            let priceText = '';
+            if (priceMin && priceMax) {
+                priceText = `từ ${Number(priceMin).toLocaleString('vi-VN')}đ đến ${Number(priceMax).toLocaleString('vi-VN')}đ`;
+            } else if (priceMin) {
+                priceText = `từ ${Number(priceMin).toLocaleString('vi-VN')}đ trở lên`;
+            } else if (priceMax) {
+                priceText = `dưới ${Number(priceMax).toLocaleString('vi-VN')}đ`;
+            }
+
+            if (priceText) {
+                titleParts.push(
+                    <React.Fragment key="price">
+                        với giá <span className={cx('search-value')}>{priceText}</span>
+                    </React.Fragment>
+                );
+            }
+        }
+
+        // 4. Kết hợp các phần lại
+        if (titleParts.length === 0) {
+            return <span>Trang tìm kiếm</span>;
+        }
+
+        return (
+            <span>
+                Kết quả cho {titleParts.map((part, index) => (
+                    // Nối các phần bằng dấu phẩy, trừ phần cuối cùng
+                    <span key={index}>{part}{index < titleParts.length - 1 ? ', ' : ''}</span>
+                ))}
+            </span>
+        );
+    };
+
+
     return (
         <>
             {/* Breadcrumb */}
@@ -66,14 +198,13 @@ function SearchResultsPage() {
                         <div className="col-12">
                             <ul className={cx('breadrumb')}>
                                 <li className={cx('home')}>
-                                    <Link to="/" >Trang chủ</Link>
+                                    <Link to="/">Trang chủ</Link>
                                     <FontAwesomeIcon icon={faAngleRight} className="mx-2" />
                                 </li>
-                                <li>Trang tìm kiếm</li>
+                                <li>Kết quả tìm kiếm</li>
                             </ul>
                             <div className={cx('title-page')}>
-                                <span>Tìm kiếm cho: </span>
-                                <span className={cx('search-value')}>"{query}"</span>
+                                {renderSearchTitle()}
                             </div>
                         </div>
                     </div>
@@ -83,42 +214,47 @@ function SearchResultsPage() {
             {/* Main Search Results */}
             <div className={cx('search-main')}>
                 <div className="container">
-                    {/* Kết quả tìm kiếm */}
-                    <div className="row">
-                        <div className="col-12">
-                            <p className={cx('search-text')}>
-                                Có <span className={cx('search-product-quantity')}>{searchResults.length}</span> kết quả
-                                tìm kiếm phù hợp.
-                            </p>
+                    {isLoading ? (
+                        <div className="text-center py-5" style={{ minHeight: '40vh' }}>
+                            <Spinner animation="border" />
+                            <h3 className="mt-3">Đang tìm kiếm...</h3>
                         </div>
-                    </div>
-
-                    {/* Danh sách sản phẩm */}
-                    <div className={cx('product-search-item', 'row', 'mt-4')}>
-                        {currentData.length > 0 ? (
-                            currentData.map(product => (
-                                <div key={product.id} className="col-lg-3 col-md-6 mb-5">
-                                    <ProductCard product={product} onViewProduct={handleShowModal} />
+                    ) : error ? (
+                        <Alert variant="danger" className="text-center">{error}</Alert>
+                    ) : (
+                        <>
+                            <div className="row">
+                                <div className="col-12">
+                                    <p className={cx('search-text')}>
+                                        Có <span className={cx('search-product-quantity')}>{paginationData.totalItems || 0}</span> kết quả
+                                        tìm kiếm phù hợp.
+                                    </p>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="col-12 text-center py-5">
-                                <h3>Không tìm thấy sản phẩm nào.</h3>
-                                <p>Vui lòng thử lại với các tiêu chí khác.</p>
                             </div>
-                        )}
-                    </div>
 
-                    {/* Phân trang */}
-                    {searchResults.length > ITEMS_PER_PAGE && (
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPageCount={maxPage}
-                            onPageChange={page => jump(page)}
-                        />
+                            <div className={cx('product-search-item', 'row', 'mt-4')}>
+                                {searchResults.length > 0 ? (
+                                    searchResults.map(product => (
+                                        <div key={product.id} className="col-lg-3 col-md-4 col-sm-6 mb-5">
+                                            <ProductCard product={product} onViewProduct={handleShowModal} />
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="col-12 text-center py-5">
+                                        <h3>Không tìm thấy sản phẩm nào.</h3>
+                                        <p className="text-muted">Vui lòng thử lại với từ khóa hoặc bộ lọc khác.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {paginationData.totalPages > 1 && (
+                                <Pagination {...paginationProps} />
+                            )}
+                        </>
                     )}
                 </div>
             </div>
+
             <ProductQuickViewModal
                 show={showModal}
                 handleClose={handleCloseModal}
