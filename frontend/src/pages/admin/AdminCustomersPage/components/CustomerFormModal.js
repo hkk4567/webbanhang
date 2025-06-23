@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, Form, Row, Col } from 'react-bootstrap';
 import AddressSelector from '../../../../components/common/AddressSelector';
 
@@ -44,22 +44,23 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
         }
     }, [customerToEdit, show]);
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-        // Xóa lỗi mật khẩu khi người dùng bắt đầu nhập lại
+    const handleChange = useCallback((e) => {
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
         if (e.target.name === 'password' || e.target.name === 'confirmPassword') {
             setPasswordError('');
         }
-    };
+    }, []);
 
-    const handleAddressChange = (addressData) => {
+    const handleAddressChange = useCallback((addressData) => {
+        // `setFormData` được React đảm bảo là ổn định
         setFormData(prev => ({
             ...prev,
-            province: addressData.city, // Giả sử AddressSelector trả về 'city'
-            district: addressData.district,
-            ward: addressData.ward,
+            // Sửa lại cho khớp với AddressSelector mới
+            province: addressData.provinceName,
+            district: addressData.districtName,
+            ward: addressData.wardName,
         }));
-    };
+    }, []);
 
     const handleSaveClick = () => {
         // --- BƯỚC 3: Validate dữ liệu và chuẩn bị gửi đi ---

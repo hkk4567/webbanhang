@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal, Button, Form, Row, Col, InputGroup, Spinner, Table, Badge } from 'react-bootstrap';
 import classNames from 'classnames/bind';
 import styles from './AdminOrdersPage.module.scss';
@@ -48,6 +48,7 @@ function AdminOrdersPage() {
     });
     const debouncedSearch = useDebounce(filters.search, 500);
     const { requestedPage, paginationProps, goToPage } = usePagination(paginationData);
+    const isInitialMount = useRef(true);
     const [addressSelectorKey, setAddressSelectorKey] = useState(Date.now()); // Key để reset AddressSelector
 
     // --- STATE MODAL ---
@@ -56,6 +57,7 @@ function AdminOrdersPage() {
     const [currentStatusInModal, setCurrentStatusInModal] = useState('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+    const { status, startDate, endDate, province, district, ward } = filters;
     // --- HÀM GỌI API ---
     const fetchOrders = useCallback(async () => {
         setIsLoading(true);
@@ -65,13 +67,8 @@ function AdminOrdersPage() {
                 page: requestedPage,
                 limit: ITEMS_PER_PAGE,
                 search: debouncedSearch,
-                status: filters.status,
-                startDate: filters.startDate,
-                endDate: filters.endDate,
-                province: filters.province,
-                district: filters.district,
-                ward: filters.ward,
-                sort: '-created_at',
+                status, startDate, endDate, province, district, ward,
+                sort: '-created_at', // Giả sử sort order cố định
             };
             const response = await getOrders(params);
             setOrders(response.data.data.orders);
@@ -81,15 +78,24 @@ function AdminOrdersPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [requestedPage, debouncedSearch, filters]);
-
+        // Dependency array giờ chỉ chứa các giá trị nguyên thủy
+    }, [requestedPage, debouncedSearch, status, startDate, endDate, province, district, ward]);
     useEffect(() => {
         fetchOrders();
     }, [fetchOrders]);
 
     useEffect(() => {
-        goToPage(1);
-    }, [debouncedSearch, filters.status, filters.startDate, filters.endDate, filters.province, filters.district, filters.ward, goToPage]);
+        // Bỏ qua lần render đầu tiên
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        // Nếu trang hiện tại khác 1 thì mới reset
+        if (paginationProps.currentPage !== 1) {
+            goToPage(1);
+        }
+        // Dependency array chỉ chứa các giá trị lọc
+    }, [debouncedSearch, status, startDate, endDate, province, district, ward, goToPage, paginationProps.currentPage]);
 
     // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
     const handleFilterChange = (e) => {
@@ -97,19 +103,28 @@ function AdminOrdersPage() {
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleAddressFilterChange = (addressData) => {
-        setFilters(prev => ({
-            ...prev,
-            province: addressData.city,
-            district: addressData.district,
-            ward: addressData.ward,
-        }));
-    };
+    const handleAddressFilterChange = useCallback((addressData) => {
+        // Chỉ cập nhật nếu dữ liệu thực sự thay đổi để tránh re-render thừa
+        setFilters(prev => {
+            if (prev.province !== addressData.provinceName ||
+                prev.district !== addressData.districtName ||
+                prev.ward !== addressData.wardName) {
+                return {
+                    ...prev,
+                    province: addressData.provinceName,
+                    district: addressData.districtName,
+                    ward: addressData.wardName,
+                };
+            }
+            // Nếu không có gì thay đổi, trả về state cũ để React không re-render
+            return prev;
+        });
+    }, []);
 
-    const handleResetFilters = () => {
+    const handleResetFilters = useCallback(() => {
         setFilters({ search: '', status: '', startDate: '', endDate: '', province: '', district: '', ward: '' });
-        setAddressSelectorKey(Date.now()); // Thay đổi key để re-render và reset AddressSelector
-    };
+        setAddressSelectorKey(Date.now());
+    }, []);
 
     const handleViewDetails = async (orderId) => {
         setSelectedOrder({ id: orderId }); // Hiển thị modal với ID trước để người dùng thấy loading

@@ -35,7 +35,7 @@ export const getProductById = (id) => {
  */
 export const getAdminProducts = (params) => {
     // Gọi đến endpoint GET /products/admin mà chúng ta đã tạo
-    return apiClient.admin.get('/products/admin', { params });
+    return apiClient.admin.get('/products', { params });
 };
 
 /**

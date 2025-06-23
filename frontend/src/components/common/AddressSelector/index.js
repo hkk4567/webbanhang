@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Row, Col } from 'react-bootstrap';
 
 const API_BASE_URL = 'https://provinces.open-api.vn/api/';
@@ -6,139 +6,142 @@ const API_BASE_URL = 'https://provinces.open-api.vn/api/';
 /**
  * Component tái sử dụng cho việc chọn địa chỉ Tỉnh/Huyện/Xã.
  * @param {object} props
- * @param {function} props.onChange - Hàm callback được gọi mỗi khi địa chỉ thay đổi, trả về { city, district, ward }
- * @param {object} [props.initialValue] - Tùy chọn: giá trị địa chỉ ban đầu { city, district, ward }
+ * @param {function} props.onChange - Hàm callback được gọi mỗi khi địa chỉ thay đổi, trả về { provinceName, districtName, wardName }
+ * @param {string} props.layout - 'horizontal' (mặc định) hoặc 'vertical'.
  */
-function AddressSelector({ onChange, initialValue, layout = 'horizontal', ...props }) {
-    // State nội bộ để quản lý các lựa chọn
-    const [selected, setSelected] = useState({
-        city: initialValue?.city || '',
-        district: initialValue?.district || '',
-        ward: initialValue?.ward || '',
-    });
+function AddressSelector({ onChange, layout = 'horizontal', ...props }) {
+    // State để quản lý mã code của các lựa chọn
+    const [selectedCodes, setSelectedCodes] = useState({ city: '', district: '', ward: '' });
 
-    // State nội bộ để lưu danh sách từ API
+    // State để lưu danh sách lấy từ API
     const [provinces, setProvinces] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
 
-    // 1. Lấy danh sách Tỉnh/Thành phố
+    // --- CÁC EFFECT ĐỂ FETCH DỮ LIỆU ĐỘNG ---
+
+    // 1. Lấy danh sách Tỉnh/Thành phố chỉ một lần khi component mount
     useEffect(() => {
         const fetchProvinces = async () => {
-            const response = await fetch(API_BASE_URL);
-            const data = await response.json();
-            setProvinces(data);
+            try {
+                const response = await fetch(`${API_BASE_URL}?depth=1`);
+                const data = await response.json();
+                setProvinces(data);
+            } catch (error) {
+                console.error("Lỗi khi tải danh sách Tỉnh/Thành phố:", error);
+            }
         };
         fetchProvinces();
-    }, []);
+    }, []); // Mảng rỗng đảm bảo chỉ chạy một lần
 
-    // 2. Tự động điền dữ liệu khi có initialValue
+    // 2. Lấy danh sách Quận/Huyện khi Tỉnh/Thành phố thay đổi
     useEffect(() => {
-        const populateInitialData = async () => {
-            if (initialValue?.city && provinces.length > 0) {
-                const provinceCode = provinces.find(p => p.name === initialValue.city)?.code;
-                if (!provinceCode) return;
-
-                setSelected(prev => ({ ...prev, city: provinceCode }));
-
-                const districtResponse = await fetch(`${API_BASE_URL}p/${provinceCode}?depth=2`);
-                const districtData = await districtResponse.json();
-                setDistricts(districtData.districts);
-
-                const districtCode = districtData.districts.find(d => d.name === initialValue.district)?.code;
-                if (!districtCode) return;
-
-                setSelected(prev => ({ ...prev, district: districtCode }));
-
-                const wardResponse = await fetch(`${API_BASE_URL}d/${districtCode}?depth=2`);
-                const wardData = await wardResponse.json();
-                setWards(wardData.wards);
-
-                const wardCode = wardData.wards.find(w => w.name === initialValue.ward)?.code;
-                setSelected(prev => ({ ...prev, ward: wardCode || '' }));
-            }
-        }
-        populateInitialData();
-    }, [initialValue, provinces]);
-
-
-    // 3. Xử lý khi người dùng chọn
-    const handleChange = async (e) => {
-        const { name, value } = e.target; // name là 'city', 'district', 'ward'. value là 'code'.
-
-        let newSelection = { ...selected };
-
-        if (name === 'city') {
-            newSelection = { city: value, district: '', ward: '' }; // Cập nhật city, reset district và ward
+        if (selectedCodes.city) {
+            const fetchDistricts = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}p/${selectedCodes.city}?depth=2`);
+                    const data = await response.json();
+                    setDistricts(data.districts);
+                } catch (error) {
+                    console.error("Lỗi khi tải danh sách Quận/Huyện:", error);
+                    setDistricts([]); // Reset nếu có lỗi
+                }
+            };
+            fetchDistricts();
+        } else {
+            // Nếu không có Tỉnh/TP nào được chọn, reset danh sách cấp dưới
             setDistricts([]);
             setWards([]);
-            if (value) {
-                const response = await fetch(`${API_BASE_URL}p/${value}?depth=2`);
-                const data = await response.json();
-                setDistricts(data.districts);
-            }
-        } else if (name === 'district') {
-            newSelection = { ...newSelection, district: value, ward: '' }; // Cập nhật district, reset ward
-            setWards([]);
-            if (value) {
-                const response = await fetch(`${API_BASE_URL}d/${value}?depth=2`);
-                const data = await response.json();
-                setWards(data.wards);
-            }
-        } else if (name === 'ward') {
-            newSelection = { ...newSelection, ward: value }; // Chỉ cập nhật ward
         }
+    }, [selectedCodes.city]); // Chạy lại mỗi khi mã tỉnh thay đổi
 
-        setSelected(newSelection); // Cập nhật state nội bộ
+    // 3. Lấy danh sách Phường/Xã khi Quận/Huyện thay đổi
+    useEffect(() => {
+        if (selectedCodes.district) {
+            const fetchWards = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}d/${selectedCodes.district}?depth=2`);
+                    const data = await response.json();
+                    setWards(data.wards);
+                } catch (error) {
+                    console.error("Lỗi khi tải danh sách Phường/Xã:", error);
+                    setWards([]); // Reset nếu có lỗi
+                }
+            };
+            fetchWards();
+        } else {
+            // Nếu không có Quận/Huyện nào được chọn, reset danh sách xã
+            setWards([]);
+        }
+    }, [selectedCodes.district]); // Chạy lại mỗi khi mã huyện thay đổi
 
-        // Gọi callback onChange với object chứa tên đầy đủ để component cha sử dụng
+    // --- EFFECT ĐỂ GỌI CALLBACK `onChange` ---
+    // Sử dụng useCallback để không tạo lại hàm này ở mỗi lần render
+    const triggerOnChange = useCallback(() => {
         if (onChange) {
-            onChange({
-                city: provinces.find(p => p.code === +newSelection.city)?.name || '',
-                district: districts.find(d => d.code === +newSelection.district)?.name || '',
-                ward: wards.find(w => w.code === +newSelection.ward)?.name || ''
-            });
+            const provinceName = provinces.find(p => p.code === Number(selectedCodes.city))?.name || '';
+            const districtName = districts.find(d => d.code === Number(selectedCodes.district))?.name || '';
+            const wardName = wards.find(w => w.code === Number(selectedCodes.ward))?.name || '';
+
+            onChange({ provinceName, districtName, wardName });
+        }
+    }, [onChange, selectedCodes, provinces, districts, wards]);
+
+    // Effect này sẽ theo dõi sự thay đổi của các lựa chọn và các danh sách
+    // để gọi lại hàm callback với dữ liệu tên đầy đủ và chính xác nhất.
+    useEffect(() => {
+        triggerOnChange();
+    }, [triggerOnChange]);
+
+
+    // --- HÀM HANDLER CHO SỰ KIỆN CỦA NGƯỜI DÙNG ---
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        // Cập nhật state nội bộ dựa trên lựa chọn của người dùng
+        if (name === 'city') {
+            setSelectedCodes({ city: value, district: '', ward: '' }); // Reset khi đổi tỉnh
+        } else if (name === 'district') {
+            setSelectedCodes(prev => ({ ...prev, district: value, ward: '' })); // Reset khi đổi huyện
+        } else if (name === 'ward') {
+            setSelectedCodes(prev => ({ ...prev, ward: value }));
         }
     };
 
+    // --- RENDER ---
     const dropdowns = (
         <>
-            <Form.Group className="mb-3">
+            <Form.Group as={layout === 'horizontal' ? Col : 'div'} md={layout === 'horizontal' ? "4" : ""} className="mb-3">
                 <Form.Label>Tỉnh/Thành phố</Form.Label>
-                <Form.Select name="city" value={selected.city} onChange={handleChange}>
+                <Form.Select name="city" value={selectedCodes.city} onChange={handleChange}>
                     <option value="">-- Chọn Tỉnh/Thành phố --</option>
                     {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
                 </Form.Select>
             </Form.Group>
 
-            <Form.Group className="mb-3">
+            <Form.Group as={layout === 'horizontal' ? Col : 'div'} md={layout === 'horizontal' ? "4" : ""} className="mb-3">
                 <Form.Label>Quận/Huyện</Form.Label>
-                <Form.Select name="district" value={selected.district} onChange={handleChange} disabled={!selected.city}>
+                <Form.Select name="district" value={selectedCodes.district} onChange={handleChange} disabled={!selectedCodes.city}>
                     <option value="">-- Chọn Quận/Huyện --</option>
                     {districts.map(d => <option key={d.code} value={d.code}>{d.name}</option>)}
                 </Form.Select>
             </Form.Group>
 
-            <Form.Group className="mb-3">
+            <Form.Group as={layout === 'horizontal' ? Col : 'div'} md={layout === 'horizontal' ? "4" : ""} className="mb-3">
                 <Form.Label>Phường/Xã</Form.Label>
-                <Form.Select name="ward" value={selected.ward} onChange={handleChange} disabled={!selected.district}>
+                <Form.Select name="ward" value={selectedCodes.ward} onChange={handleChange} disabled={!selectedCodes.district}>
                     <option value="">-- Chọn Phường/Xã --</option>
                     {wards.map(w => <option key={w.code} value={w.code}>{w.name}</option>)}
                 </Form.Select>
             </Form.Group>
         </>
     );
-    // Render bố cục dựa trên prop 'layout'
+
     if (layout === 'vertical') {
         return <div {...props}>{dropdowns}</div>;
     }
-    return (
-        <Row {...props}>
-            <Col md={4}>{dropdowns.props.children[0]}</Col>
-            <Col md={4}>{dropdowns.props.children[1]}</Col>
-            <Col md={4}>{dropdowns.props.children[2]}</Col>
-        </Row>
-    );
+
+    return <Row {...props}>{dropdowns}</Row>;
 }
 
 export default AddressSelector;
