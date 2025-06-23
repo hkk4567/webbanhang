@@ -1,17 +1,24 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { getCart, addToCart as addToCartApi, removeFromCart as removeFromCartApi, clearCart as clearCartApi } from '../api/cartService';
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+// --- BƯỚC 1: IMPORT ĐẦY ĐỦ CÁC HÀM API ---
+import {
+    getCart,
+    addToCart as addToCartApi,
+    updateCartItem as updateCartItemApi, // Import hàm cập nhật
+    removeFromCart as removeFromCartApi,
+    clearCart as clearCartApi
+} from '../api/cartService';
 import { useAuth } from './AuthContext';
 
-// --- Trạng thái ban đầu ---
+// --- Trạng thái ban đầu (không đổi) ---
 const initialState = {
-    items: [],       // Mảng các sản phẩm trong giỏ
-    totalItems: 0,   // Tổng số lượng các sản phẩm
-    totalPrice: 0,   // Tổng giá tiền
-    isLoading: true, // Trạng thái loading khi lấy giỏ hàng lần đầu
+    items: [],
+    totalItems: 0,
+    totalPrice: 0,
+    isLoading: true,
     error: null,
 };
 
-// --- Reducer để quản lý các hành động cập nhật state ---
+// --- Reducer (không đổi) ---
 const cartReducer = (state, action) => {
     switch (action.type) {
         case 'SET_CART_LOADING':
@@ -27,28 +34,29 @@ const cartReducer = (state, action) => {
         case 'SET_CART_ERROR':
             return { ...state, isLoading: false, error: action.payload };
         case 'CLEAR_CART':
-            return { ...initialState, isLoading: false }; // Reset về ban đầu
+            return { ...initialState, isLoading: false };
         default:
             return state;
     }
 };
 
-// --- Tạo Context ---
 const CartContext = createContext();
 
-// --- Tạo Provider Component ---
 export function CartProvider({ children }) {
     const [state, dispatch] = useReducer(cartReducer, initialState);
-    const { user } = useAuth();
+    const { isLoggedIn } = useAuth(); // Đổi tên thành isLoggedIn cho rõ ràng
 
-    // Hàm để lấy giỏ hàng từ API và cập nhật state
-    const fetchCart = async () => {
+    // --- Bọc fetchCart trong useCallback ---
+    const fetchCart = useCallback(async () => {
+        if (!isLoggedIn) {
+            dispatch({ type: 'CLEAR_CART' });
+            return;
+        }
         dispatch({ type: 'SET_CART_LOADING' });
         try {
             const response = await getCart();
             dispatch({ type: 'SET_CART_SUCCESS', payload: response.data.data });
         } catch (error) {
-            // Nếu lỗi 401 (chưa đăng nhập), không coi là lỗi, chỉ là giỏ hàng trống
             if (error.response && error.response.status === 401) {
                 dispatch({ type: 'CLEAR_CART' });
             } else {
@@ -56,70 +64,68 @@ export function CartProvider({ children }) {
                 dispatch({ type: 'SET_CART_ERROR', payload: 'Không thể tải giỏ hàng.' });
             }
         }
-    };
+    }, [isLoggedIn]); // Dependency là isLoggedIn
 
-    // Lấy giỏ hàng khi người dùng đăng nhập hoặc khi component được mount lần đầu
     useEffect(() => {
-        if (user) {
-            fetchCart();
-        } else {
-            dispatch({ type: 'CLEAR_CART' });
-        }
-    }, [user]);
+        fetchCart();
+    }, [fetchCart]);
 
+    // --- CÁC HÀM HÀNH ĐỘNG ĐÃ ĐƯỢC SỬA ---
 
-    // --- Các hàm hành động mà các component khác sẽ gọi ---
-
-    const addToCart = async (productId, quantity) => {
+    const addToCart = useCallback(async (productId, quantity) => {
         try {
-            await addToCartApi(productId, quantity);
-            // Sau khi thêm thành công, gọi lại API để lấy giỏ hàng mới nhất
+            await addToCartApi(productId, quantity); // Vẫn dùng API cộng dồn
             await fetchCart();
-            // (Tùy chọn) Hiển thị thông báo thành công
-            // toast.success("Đã thêm vào giỏ hàng!");
+            // Ném lỗi ra ngoài để component có thể bắt và xử lý
         } catch (error) {
             console.error("Lỗi khi thêm vào giỏ:", error);
-            // (Tùy chọn) Hiển thị thông báo lỗi
-            // toast.error(error.response?.data?.message || "Không thể thêm sản phẩm.");
+            throw error;
         }
-    };
+    }, [fetchCart]);
 
-    // Thực chất nó gọi lại chính API addToCart, vì backend sẽ tự xử lý việc ghi đè
-    const updateQuantity = async (productId, newQuantity) => {
-        if (newQuantity < 1) {
-            // Nếu số lượng nhỏ hơn 1, thì thực hiện xóa
-            await removeFromCart(productId);
-            return;
-        }
-        try {
-            await addToCartApi(productId, newQuantity);
-            await fetchCart();
-        } catch (error) {
-            console.error("Lỗi khi cập nhật số lượng:", error);
-        }
-    };
-
-    const removeFromCart = async (productId) => {
+    const removeFromCart = useCallback(async (productId) => {
         try {
             await removeFromCartApi(productId);
             await fetchCart();
         } catch (error) {
             console.error("Lỗi khi xóa khỏi giỏ:", error);
+            throw error;
         }
-    };
+    }, [fetchCart]);
 
-    const clearCart = async () => {
+    // --- BƯỚC 2: SỬA HOÀN TOÀN HÀM updateQuantity ---
+    const updateQuantity = useCallback(async (productId, newQuantity) => {
+        if (newQuantity < 1) {
+            await removeFromCart(productId);
+            return;
+        }
+        try {
+            await updateCartItemApi(productId, newQuantity);
+            await fetchCart();
+        } catch (error) {
+            console.error("Lỗi khi cập nhật số lượng:", error);
+            throw error;
+        }
+        // Thêm `removeFromCart` vào dependency array
+    }, [fetchCart, removeFromCart]);
+
+    const clearCart = useCallback(async () => {
         try {
             await clearCartApi();
-            await fetchCart(); // Sẽ trả về giỏ hàng trống
+            dispatch({ type: 'CLEAR_CART' }); // Xóa ngay ở client, không cần fetch lại
         } catch (error) {
             console.error("Lỗi khi xóa giỏ hàng:", error);
+            throw error;
         }
-    };
-
+    }, []);
 
     const value = {
-        ...state, // Trả ra items, totalItems, totalPrice, isLoading, error
+        // Đổi tên để khớp với component
+        cartItems: state.items,
+        totalItems: state.totalItems,
+        totalPrice: state.totalPrice,
+        isLoading: state.isLoading,
+        error: state.error,
         addToCart,
         updateQuantity,
         removeFromCart,
@@ -133,7 +139,6 @@ export function CartProvider({ children }) {
     );
 }
 
-// --- Tạo Custom Hook để sử dụng Context dễ dàng hơn ---
 export function useCart() {
     const context = useContext(CartContext);
     if (context === undefined) {

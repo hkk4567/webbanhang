@@ -10,6 +10,11 @@ export const addToCart = (productId, quantity) => {
     return apiClient.user.post('/cart', { productId, quantity });
 };
 
+// --- HÀM ĐỂ CẬP NHẬT SỐ LƯỢNG ---
+export const updateCartItem = (productId, newQuantity) => {
+    return apiClient.user.put(`/cart/${productId}`, { quantity: newQuantity });
+};
+
 // Xóa một sản phẩm khỏi giỏ hàng
 export const removeFromCart = (productId) => {
     return apiClient.user.delete(`/cart/${productId}`);

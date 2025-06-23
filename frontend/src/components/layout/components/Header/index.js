@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Import thêm useRef
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 // Import các context
 import { useCart } from '../../../../context/CartContext';
 import { useAuth } from '../../../../context/AuthContext';
 import CartItem from '../../../../components/common/CartItem';
+
 // Import các thành phần UI
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faMugHot, faMagnifyingGlass, faCartShopping, faUser, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import { Spinner } from 'react-bootstrap'; // Import Spinner để hiển thị loading giỏ hàng
 
 const cx = classNames.bind(styles);
 function Header() {
@@ -18,42 +20,89 @@ function Header() {
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [isSearchOpen, setSearchOpen] = useState(false);
     const [isUserMenuOpen, setUserMenuOpen] = useState(false);
+    const [isCartOpen, setCartOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
 
+    // === TẠO REF CHO CÁC DROPDOWN ===
+    const searchRef = useRef(null);
+    const userMenuRef = useRef(null);
+    const mobileMenuRef = useRef(null);
+    const cartRef = useRef(null);
     // === LẤY DỮ LIỆU TỪ CONTEXT ===
-    // Dùng đúng tên biến từ Auth context
     const { user, isLoggedIn, logout } = useAuth();
-    // Dùng đúng tên biến từ Cart context
-    const { items: cartItems, totalItems, totalPrice, updateQuantity, removeFromCart } = useCart();
+    // Đổi tên `items` thành `cartItems` cho khớp với component
+    const {
+        cartItems,
+        totalItems,
+        totalPrice,
+        updateQuantity,
+        removeFromCart,
+        isLoading: isCartLoading // Lấy trạng thái loading của giỏ hàng
+    } = useCart();
 
     // === CÁC HÀM XỬ LÝ SỰ KIỆN ===
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchTerm.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
-            setSearchOpen(false);
+            closeAllMenus(); // Đóng tất cả menu sau khi search
             setSearchTerm('');
         }
     };
 
     const handleLogout = () => {
         logout();
-        setUserMenuOpen(false);
+        closeAllMenus();
         navigate('/');
     };
 
+    // Hàm này được gọi khi click vào các link trong menu
     const closeAllMenus = () => {
         setMenuOpen(false);
         setSearchOpen(false);
         setUserMenuOpen(false);
+        setCartOpen(false);
     };
 
-    // === EFFECT ĐỂ THEO DÕI SCROLL ===
+    const handleUpdateQuantity = async (productId, newQuantity) => {
+        try {
+            await updateQuantity(productId, newQuantity);
+        } catch (error) {
+            // Hiển thị thông báo lỗi từ server cho người dùng
+            const errorMessage = error.response?.data?.message || 'Thao tác thất bại. Vui lòng thử lại.';
+            alert(errorMessage); // Dùng alert() cho đơn giản, hoặc một thư viện toast
+        }
+    };
+
+    const handleRemove = async (productId) => {
+        try {
+            await removeFromCart(productId);
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Không thể xóa sản phẩm.';
+            alert(errorMessage);
+        }
+    };
+
+    // === CÁC EFFECT ===
+    // Effect để đóng menu khi click ra ngoài
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50);
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) setSearchOpen(false);
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target)) setUserMenuOpen(false);
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) setMenuOpen(false);
+            if (cartRef.current && !cartRef.current.contains(event.target)) {
+                setCartOpen(false);
+            }
         };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Effect theo dõi scroll (không đổi)
+    useEffect(() => {
+        const handleScroll = () => setIsScrolled(window.scrollY > 50);
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
@@ -67,7 +116,7 @@ function Header() {
 
                     {/* 1. Mobile Menu Icon (Chỉ hiện trên tablet và mobile) */}
                     {/* d-lg-none: ẩn trên desktop. col-md-1 col-2: chiếm 1/12 trên tablet, 2/12 trên mobile */}
-                    <div className="d-lg-none col-md-1 col-2">
+                    <div className="d-lg-none col-md-1 col-2" ref={mobileMenuRef}>
                         <div className={cx('menu-icon')}>
                             <div className={cx('menu-active')} onClick={() => setMenuOpen(!isMenuOpen)}>
                                 <FontAwesomeIcon icon={faBars} />
@@ -176,69 +225,76 @@ function Header() {
                     <div className="col-lg-2 col-md-2 col-2">
                         <div className={cx('right-box')}>
                             {/* Search */}
-                            <div className={cx('search')}>
+                            <div className={cx('search')} ref={searchRef}>
                                 <FontAwesomeIcon icon={faMagnifyingGlass} onClick={() => setSearchOpen(!isSearchOpen)} />
                                 {isSearchOpen && (
-                                    <form className={cx('search-input')} onSubmit={handleSearchSubmit}>
-                                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <FontAwesomeIcon icon={faMagnifyingGlass} />
+                                    <div className={cx('search-dropdown')}>
+                                        <form className={cx('search-form')} onSubmit={handleSearchSubmit}>
+                                            <FontAwesomeIcon icon={faMagnifyingGlass} className={cx('search-form-icon')} />
                                             <input
                                                 type="text"
-                                                className={cx('search-input-text')}
-                                                placeholder="Tìm kiếm..."
+                                                className={cx('search-form-input')}
+                                                placeholder="Tìm sản phẩm..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
                                                 autoFocus
                                             />
+                                        </form>
+                                        <div className={cx('search-advanced')}>
+                                            <Link to="/multisearch" onClick={closeAllMenus}>
+                                                Tìm kiếm nâng cao
+                                            </Link>
                                         </div>
-                                    </form>
+                                    </div>
                                 )}
                             </div>
 
                             {/* Cart (Sử dụng component CartDropdown) */}
-                            <div className={cx('cart')}>
-                                <Link to="/cart" onClick={closeAllMenus} className={cx('cart-icon')}>
+                            <div className={cx('cart')} ref={cartRef}>
+                                <div className={cx('cart-icon-wrapper')} onClick={() => setCartOpen(!isCartOpen)}>
                                     <FontAwesomeIcon icon={faCartShopping} />
-                                </Link>
-                                {totalItems > 0 && <span className={cx('cart-number')}>{totalItems}</span>}
-
-                                <div className={cx('dropdown-cart', { 'no-items': !cartItems || cartItems.length === 0 })}>
-                                    {cartItems && cartItems.length > 0 ? (
-                                        <>
-                                            <h4 className={cx('dropdown-cart-header')}>Sản phẩm đã thêm</h4>
-                                            <ul className={cx('dropdown-cart-list')}>
-                                                {/* Vòng lặp để render các CartItem */}
-                                                {cartItems.map(item => (
-                                                    <CartItem
-                                                        // Sửa key thành productId để đảm bảo là duy nhất
-                                                        key={item.productId}
-                                                        item={item}
-                                                        // Truyền các hàm xử lý xuống props
-                                                        onQuantityChange={updateQuantity}
-                                                        onRemove={removeFromCart}
-                                                    />
-                                                ))}
-                                            </ul>
-                                            <div className={cx('dropdown-cart-footer')}>
-                                                <div className={cx('dropdown-cart-total')}>
-                                                    <span>Tổng cộng:</span>
-                                                    <span className={cx('price-color')}>{formatCurrency(totalPrice)}</span>
-                                                </div>
-                                                <div className={cx('dropdown-cart-pay')}>
-                                                    <Link to="/cart" className={cx('link-payMoney')}>Xem giỏ hàng</Link>
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className={cx('dropdown-cart-content')}>
-                                            <p>Giỏ hàng của bạn đang trống.</p>
-                                        </div>
-                                    )}
                                 </div>
+                                {totalItems > 0 && <span className={cx('cart-number')}>{totalItems}</span>}
+                                {isCartOpen && (
+                                    <div className={cx('dropdown-cart', { 'no-items': !cartItems || cartItems.length === 0 })}>
+                                        {isCartLoading ? (
+                                            <div className={cx('cart-loading')}>
+                                                <Spinner animation="border" size="sm" />
+                                            </div>
+                                        ) : cartItems && cartItems.length > 0 ? (
+                                            <>
+                                                <h4 className={cx('dropdown-cart-header')}>Sản phẩm đã thêm</h4>
+                                                <ul className={cx('dropdown-cart-list')}>
+                                                    {cartItems.map(item => (
+                                                        <CartItem
+                                                            key={item.productId}
+                                                            item={item}
+                                                            onQuantityChange={handleUpdateQuantity}
+                                                            onRemove={handleRemove}
+                                                        />
+                                                    ))}
+                                                </ul>
+                                                <div className={cx('dropdown-cart-footer')}>
+                                                    <div className={cx('dropdown-cart-total')}>
+                                                        <span>Tổng cộng:</span>
+                                                        <span className={cx('price-color')}>{formatCurrency(totalPrice)}</span>
+                                                    </div>
+                                                    <div className={cx('dropdown-cart-pay')}>
+                                                        <Link to="/cart" className={cx('link-payMoney')} onClick={closeAllMenus}>Xem giỏ hàng</Link>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className={cx('dropdown-cart-content')}>
+                                                <p>Giỏ hàng của bạn đang trống.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* User Icon */}
-                            <div className={cx('user-icon')}>
+                            <div className={cx('user-icon')} ref={userMenuRef}>
                                 <FontAwesomeIcon icon={faUser} onClick={() => setUserMenuOpen(!isUserMenuOpen)} />
                                 {isUserMenuOpen && (
                                     <>

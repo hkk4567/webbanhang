@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './ProductDetailPage.module.scss';
-import { Spinner } from 'react-bootstrap'; // Import Spinner
+import { Spinner, Alert } from 'react-bootstrap'; // Import Spinner
 
 // --- BƯỚC 1: IMPORT HÀM API MỚI ---
 import { getProductById } from '../../../api/productService';
@@ -10,7 +10,7 @@ import { useCart } from '../../../context/CartContext';
 
 // Import Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleRight, faMinus, faPlus, faCartPlus } from '@fortawesome/free-solid-svg-icons';
+import { faAngleRight, faMinus, faPlus, faCartPlus, faSyncAlt } from '@fortawesome/free-solid-svg-icons'; // Thêm icon update
 import { faFacebookSquare, faInstagram, faGooglePlusG, faPinterest } from '@fortawesome/free-brands-svg-icons';
 
 const cx = classNames.bind(styles);
@@ -20,25 +20,36 @@ const cx = classNames.bind(styles);
 
 function ProductDetailPage() {
     const { id } = useParams();
-    const { addToCart } = useCart();
+    const { addToCart, updateQuantity, cartItems } = useCart();
 
     // --- BƯỚC 2: THÊM STATE ĐIỀU KHIỂN LOADING VÀ LỖI ---
     const [product, setProduct] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-
+    const [actionMessage, setActionMessage] = useState({ type: '', text: '' });
+    // --- TÌM SẢN PHẨM HIỆN TẠI TRONG GIỎ HÀNG ---
+    const itemInCart = cartItems.find(item => item.productId === Number(id));
+    const isProductInCart = !!itemInCart;
     // --- BƯỚC 3: CẬP NHẬT useEffect ĐỂ GỌI API ---
     useEffect(() => {
-        // Định nghĩa hàm async bên trong để gọi API
         const fetchProduct = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                // Gọi API với id từ URL
                 const response = await getProductById(id);
-                // Dữ liệu sản phẩm nằm trong response.data.data.product
-                setProduct(response.data.data.product);
+                const fetchedProduct = response.data.data.product;
+                setProduct(fetchedProduct);
+
+                // Sau khi có sản phẩm, kiểm tra xem nó có trong giỏ không
+                const currentItemInCart = cartItems.find(item => item.productId === Number(id));
+                if (currentItemInCart) {
+                    // Nếu có, đặt số lượng hiển thị bằng số lượng trong giỏ
+                    setQuantity(currentItemInCart.quantity);
+                } else {
+                    // Nếu không, đặt lại số lượng là 1
+                    setQuantity(1);
+                }
             } catch (err) {
                 console.error('Failed to fetch product details:', err);
                 setError('Không tìm thấy sản phẩm hoặc đã có lỗi xảy ra.');
@@ -47,44 +58,54 @@ function ProductDetailPage() {
             }
         };
 
-        // Chỉ gọi API nếu có id
         if (id) {
             fetchProduct();
         }
-
-        // Reset số lượng mỗi khi chuyển sản phẩm
-        setQuantity(1);
-
-    }, [id]); // Dependency là 'id', mỗi khi id thay đổi, sẽ gọi lại API
+        // Phụ thuộc vào `id` và cả `cartItems` để khi giỏ hàng thay đổi (ở nơi khác),
+        // component này cũng cập nhật lại số lượng
+    }, [id, cartItems]);
 
     const handleQuantityChange = (amount) => {
         setQuantity(prevQuantity => {
             const newQuantity = prevQuantity + amount;
-            // Ngăn số lượng giảm xuống dưới 1
             if (newQuantity < 1) return 1;
-            // Ngăn số lượng vượt quá số lượng tồn kho
             if (product && newQuantity > product.quantity) {
-                alert(`Số lượng tồn kho chỉ còn ${product.quantity} sản phẩm.`);
+                setActionMessage({ type: 'danger', text: `Số lượng tồn kho chỉ còn ${product.quantity} sản phẩm.` });
+                setTimeout(() => setActionMessage({ type: '', text: '' }), 3000);
                 return product.quantity;
             }
             return newQuantity;
         });
     };
 
-    const handleAddToCart = () => {
-        // --- BƯỚC KIỂM TRA QUAN TRỌNG NHẤT ---
-        // Log ra để xem chính xác `product` là gì khi click
-        console.log('Attempting to add to cart. Product object:', product);
-        console.log('Selected quantity:', quantity);
+    const handleCartAction = async () => {
+        if (!product || !product.id || quantity <= 0) {
+            alert("Dữ liệu không hợp lệ.");
+            return;
+        }
 
-        // Thêm điều kiện kiểm tra chặt chẽ
-        if (product && product.id && quantity > 0) {
-            addToCart(product.id, quantity);
-            alert(`Đã thêm ${quantity} sản phẩm "${product.name}" vào giỏ hàng!`);
-        } else {
-            // Nếu không thỏa mãn, log lỗi để biết lý do
-            console.error("Không thể thêm vào giỏ hàng. Dữ liệu không hợp lệ:", { product, quantity });
-            alert("Đã có lỗi xảy ra, không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.");
+        setActionMessage({ type: '', text: '' });
+
+        try {
+            if (isProductInCart) {
+                // Nếu đã có trong giỏ, CẬP NHẬT số lượng
+                // So sánh số lượng mới với số lượng cũ để tránh gọi API không cần thiết
+                if (quantity !== itemInCart.quantity) {
+                    await updateQuantity(product.id, quantity);
+                    setActionMessage({ type: 'success', text: 'Đã cập nhật giỏ hàng!' });
+                } else {
+                    setActionMessage({ type: 'info', text: 'Số lượng không thay đổi.' });
+                }
+            } else {
+                // Nếu chưa có, THÊM vào giỏ
+                await addToCart(product.id, quantity);
+                setActionMessage({ type: 'success', text: 'Đã thêm vào giỏ hàng!' });
+            }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 'Đã có lỗi xảy ra.';
+            setActionMessage({ type: 'danger', text: errorMessage });
+        } finally {
+            setTimeout(() => setActionMessage({ type: '', text: '' }), 3000);
         }
     };
 
@@ -160,28 +181,32 @@ function ProductDetailPage() {
                                 <div className={cx('detail-stock')}>
                                     <p>Số lượng tồn kho: {product.quantity}</p>
                                 </div>
+                                {actionMessage.text && (
+                                    <Alert variant={actionMessage.type} className="mt-2 mb-3">
+                                        {actionMessage.text}
+                                    </Alert>
+                                )}
                                 <div className={cx('detail-quantity')}>
                                     <button type="button" className={cx('quantity-btn')} onClick={() => handleQuantityChange(-1)}>
                                         <FontAwesomeIcon icon={faMinus} />
                                     </button>
-                                    <input
-                                        className={cx('quantity-input')}
-                                        type="text"
-                                        value={quantity}
-                                        readOnly
-                                    />
+                                    <input className={cx('quantity-input')} type="text" value={quantity} readOnly />
                                     <button type="button" className={cx('quantity-btn')} onClick={() => handleQuantityChange(1)}>
                                         <FontAwesomeIcon icon={faPlus} />
                                     </button>
                                     {/* Vô hiệu hóa nút nếu hết hàng */}
                                     <button
                                         type="button"
-                                        className={cx('add-to-cart-btn')}
-                                        onClick={handleAddToCart}
-                                        disabled={product.quantity === 0}
+                                        // Đổi class để có màu khác nếu là cập nhật
+                                        className={cx('add-to-cart-btn', { 'update-cart-btn': isProductInCart })}
+                                        onClick={handleCartAction}
+                                        disabled={product.quantity === 0 || (isProductInCart && quantity === itemInCart.quantity)}
                                     >
-                                        <FontAwesomeIcon icon={faCartPlus} className="me-2" />
-                                        {product.quantity > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
+                                        <FontAwesomeIcon icon={isProductInCart ? faSyncAlt : faCartPlus} className="me-2" />
+                                        {product.quantity > 0
+                                            ? (isProductInCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ hàng')
+                                            : 'Hết hàng'
+                                        }
                                     </button>
                                 </div>
                                 <div className={cx('detail-description')}>

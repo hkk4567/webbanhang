@@ -10,6 +10,7 @@ $primary-color: #e4b95b;
 $dark-color: #333;
 $text-color: #555;
 $border-light-color: #eee;
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -42,10 +43,12 @@ $border-light-color: #eee;
         height: 120px;
     }
 }
+
 .nav__link .active {
     color: #f39c12;
     font-weight: bold;
 }
+
 /* --- Menu Icon (Mobile/Tablet) --- */
 .menu-icon {
     position: relative;
@@ -196,7 +199,7 @@ $border-light-color: #eee;
 /* Khi link đó có thêm class local “active” */
 .nav__link.active {
     color: #e7b35a;
-    font-weight: bold; 
+    font-weight: bold;
 }
 
 
@@ -212,7 +215,6 @@ $border-light-color: #eee;
     color: white;
 
     // Hiệu ứng hover chung
-    .search:hover,
     .cart>a:hover,
     // target thẻ <a> bên trong cart
     .user-icon>i:hover {
@@ -222,46 +224,94 @@ $border-light-color: #eee;
     }
 
     .search {
-        padding-right: 10px;
+        padding: 0 15px;
         position: relative;
+        cursor: pointer;
+        transition: color 0.2s linear;
 
-        .search-input {
+        // Sử dụng nesting của SASS để định nghĩa các class con.
+        // Dấu & đại diện cho class cha (.search)
+        // Ví dụ: &.search-dropdown sẽ biên dịch thành .search .search-dropdown
+        .search-dropdown {
             position: absolute;
-            top: 140%;
-            right: -26px;
-            background-color: white;
+            top: calc(100% + 15px);
+            right: 0px;
             width: 280px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 1rem;
+            z-index: 100;
+            cursor: default;
+            animation: fadeInDown 0.3s ease-out forwards;
+
+            // Tam giác chỉ lên trên (kế thừa từ .search-dropdown)
+            &::before {
+                content: '';
+                position: absolute;
+                top: -10px;
+                right: 15px;
+                width: 0;
+                height: 0;
+                border-left: 10px solid transparent;
+                border-right: 10px solid transparent;
+                border-bottom: 10px solid #fff;
+            }
+        }
+
+        // Form tìm kiếm (nằm trong .search-dropdown)
+        .search-form {
+            display: flex;
             align-items: center;
-            box-shadow: 0px 3px 3px black;
-            animation: fadeIn .2s ease;
-            // display được quản lý bởi React
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 0.5rem;
+            background-color: #f9f9f9;
+            transition: border-color 0.2s;
+            color: #e4b95b;
+
+            // Highlight border khi focus vào input bên trong
+            &:focus-within {
+                border-color: var(--primary-color);
+            }
+        }
+
+        // Icon bên trong form
+        .search-form-icon {
+            color: #888;
+            margin-right: 0.5rem;
+        }
+
+        // Input bên trong form
+        .search-form-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            width: 100%;
+            font-size: 1rem;
+            color: #e4b95b;
+
+            &::placeholder {
+                color: #aaa;
+            }
+        }
+
+        // Link tìm kiếm nâng cao (nằm trong .search-dropdown)
+        .search-advanced {
+            margin-top: 0.75rem;
+            text-align: center;
+            color: #e4b95b;
 
             a {
-                border-top: 1px solid black;
-                padding: 5px 10px 10px 10px;
-                display: block;
-                text-align: center;
+                font-size: 0.875rem;
+                color: var(--primary-color);
                 text-decoration: none;
-                color: #333;
-            }
+                transition: opacity 0.2s;
 
-            .input-icon-js {
-                color: black;
-                display: inline-block;
-                font-size: 16px;
-                padding: 0 10px;
-                color: #888;
-                cursor: pointer;
-            }
-
-            .search-input-text {
-                display: inline-block;
-                border: none;
-                outline: none;
-                font-size: 18px;
-                padding: 10px 14px 10px 0;
-                flex: 1;
-                color: #888;
+                &:hover {
+                    opacity: 0.8;
+                    text-decoration: underline;
+                }
             }
         }
     }
@@ -274,6 +324,7 @@ $border-light-color: #eee;
         .cart-icon {
             color: #ffffff;
         }
+
         // Các đường kẻ dọc hai bên
         &::before,
         &::after {
@@ -310,13 +361,8 @@ $border-light-color: #eee;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
-        // --- CƠ CHẾ HIỂN THỊ DROPDOWN BẰNG :hover ---
-        &:hover .dropdown-cart {
-            display: block; // Hiển thị dropdown khi hover vào .cart
-        }
-
         .dropdown-cart {
-            display: none; // Mặc định ẩn
+            display: block; // Mặc định ẩn
             position: absolute;
             top: 150%;
             right: -15px; // Căn chỉnh lại cho đẹp
@@ -368,7 +414,7 @@ $border-light-color: #eee;
                 margin: 0;
                 border-bottom: 1px solid $border-light-color;
                 background-color: #fcfcfc;
-                text-align: left;       
+                text-align: left;
             }
 
             .dropdown-cart-list {
@@ -440,7 +486,7 @@ $border-light-color: #eee;
                 font-weight: bold;
                 font-size: 1.1rem; // Làm cho giá tiền to hơn một chút       
             }
-        }   
+        }
     }
 
     .user-icon {
