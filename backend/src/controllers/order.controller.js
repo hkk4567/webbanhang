@@ -264,3 +264,38 @@ exports.getOrderById = catchAsync(async (req, res, next) => {
     }
     res.status(200).json({ status: 'success', data: { order } });
 });
+
+exports.getMyOrders = catchAsync(async (req, res, next) => {
+    const userId = req.user.id; // Lấy ID từ user đã được xác thực
+    console.log(userId);
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 5; // Mặc định 5 đơn/trang
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Order.findAndCountAll({
+        where: { userId: userId },
+        include: [
+            {
+                model: OrderItem,
+                as: 'items', // 'as' phải khớp với định nghĩa association
+            }
+        ],
+        order: [['created_at', 'DESC']], // Sắp xếp đơn hàng mới nhất lên đầu
+        limit,
+        offset,
+        distinct: true, // Quan trọng khi dùng include với limit/offset
+    });
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            orders: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+            }
+        }
+    });
+});

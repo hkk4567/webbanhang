@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Tất cả các route đơn hàng đều yêu cầu đăng nhập
 router.use(protect);
-
+router.get('/my-orders', orderController.getMyOrders);
 // API để tạo đơn hàng mới
 router.post('/', orderController.createOrder);
 
@@ -13,9 +13,7 @@ router.post('/', orderController.createOrder);
 // Logic kiểm tra chủ sở hữu đơn hàng sẽ nằm trong controller
 router.get('/:id', orderController.getOrderById);
 
-
 // --- CÁC ROUTE CỦA ADMIN/STAFF ---
-
 // Lấy tất cả đơn hàng (chỉ admin/staff được xem)
 router.get('/', restrictTo('admin', 'staff'), orderController.getAllOrders);
 
