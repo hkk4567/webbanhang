@@ -14,6 +14,7 @@ router.route('/')
 
 // Xóa một sản phẩm cụ thể khỏi giỏ hàng
 router.route('/:productId')
+    .put(cartController.updateCartItem)
     .delete(cartController.removeFromCart);
 
 module.exports = router;

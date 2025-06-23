@@ -6,65 +6,44 @@ const AppError = require('../utils/appError');
 // === 1. THÊM/CẬP NHẬT SẢN PHẨM VÀO GIỎ HÀNG ===
 exports.addToCart = catchAsync(async (req, res, next) => {
     const userId = req.user.id;
-    const { productId, quantity: newQuantity } = req.body; // Đổi tên quantity thành newQuantity cho rõ ràng
+    const { productId, quantity } = req.body; // Giờ quantity là số lượng cuối cùng
 
-    if (!productId || !newQuantity || newQuantity <= 0) {
+    if (!productId || !quantity || quantity <= 0) {
         return next(new AppError('Vui lòng cung cấp productId và quantity hợp lệ.', 400));
     }
 
+    // 1. Kiểm tra sản phẩm và tồn kho
     const product = await Product.findByPk(productId);
     if (!product || product.status !== 'active') {
         return next(new AppError('Sản phẩm không tồn tại hoặc không có sẵn.', 404));
     }
 
-    const cartKey = `cart:${userId}`;
-    const productField = productId.toString();
-
-    // --- BẮT ĐẦU LOGIC CỘNG DỒN ---
-
-    // 1. Lấy số lượng hiện tại của sản phẩm trong giỏ hàng (nếu có)
-    const existingProductJSON = await redisClient.hGet(cartKey, productField);
-    let currentQuantity = 0;
-
-    if (existingProductJSON) {
-        // Nếu sản phẩm đã tồn tại, parse JSON để lấy số lượng
-        try {
-            const existingProduct = JSON.parse(existingProductJSON);
-            currentQuantity = parseInt(existingProduct.quantity, 10) || 0;
-        } catch (e) {
-            // Xử lý trường hợp dữ liệu trong Redis bị hỏng
-            console.error("Lỗi parse JSON từ Redis:", e);
-            currentQuantity = 0;
-        }
-    }
-
-    // 2. Tính toán số lượng mới
-    const totalQuantity = currentQuantity + newQuantity;
-
-    // 3. Kiểm tra lại với số lượng tồn kho
-    if (product.quantity < totalQuantity) {
+    // So sánh thẳng với số lượng yêu cầu
+    if (product.quantity < quantity) {
         return next(new AppError(`Không đủ hàng. Chỉ còn ${product.quantity} sản phẩm trong kho.`, 400));
     }
 
-    // 4. Lưu lại số lượng tổng vào Redis
-    // Dữ liệu lưu có thể chứa thêm thông tin khác nếu muốn
+    const cartKey = `cart:${userId}`;
+    const productField = productId.toString();
+
+    // 2. Tạo đối tượng item mới để lưu vào Redis
     const newCartItem = {
         productId: productId,
-        quantity: totalQuantity,
-        name: product.name,       // Lưu tên để dễ hiển thị
-        price: product.price,     // Lưu giá tại thời điểm thêm
-        imageUrl: product.imageUrl // Lưu ảnh
+        quantity: quantity, // <<-- Lấy thẳng số lượng mới, không cộng dồn
+        name: product.name,
+        price: product.price,
+        imageUrl: product.imageUrl
     };
 
+    // 3. Ghi đè vào Redis
+    // hSet sẽ tự động tạo mới nếu chưa có, hoặc cập nhật nếu đã tồn tại
     await redisClient.hSet(cartKey, productField, JSON.stringify(newCartItem));
-
-    // --- KẾT THÚC LOGIC CỘNG DỒN ---
 
     res.status(200).json({
         status: 'success',
-        message: 'Giỏ hàng đã được cập nhật.',
+        message: 'Sản phẩm đã được thêm/cập nhật trong giỏ hàng.',
         data: {
-            item: newCartItem // Trả về item đã được cập nhật
+            item: newCartItem
         }
     });
 });
@@ -154,4 +133,49 @@ exports.clearCart = catchAsync(async (req, res, next) => {
     await redisClient.del(cartKey);
 
     res.status(204).send();
+});
+
+// === 5. CẬP NHẬT SỐ LƯỢNG CỦA MỘT SẢN PHẨM  ===
+exports.updateCartItem = catchAsync(async (req, res, next) => {
+    const userId = req.user.id;
+    const { productId } = req.params; // Lấy ID sản phẩm từ URL
+    const { quantity: newQuantity } = req.body; // Lấy số lượng mới từ body
+
+    if (!newQuantity || newQuantity <= 0) {
+        return next(new AppError('Số lượng phải là một số lớn hơn 0.', 400));
+    }
+
+    const cartKey = `cart:${userId}`;
+    const productField = productId.toString();
+
+    // Lấy thông tin sản phẩm để kiểm tra tồn kho
+    const product = await Product.findByPk(productId);
+    if (!product || product.status !== 'active') {
+        return next(new AppError('Sản phẩm không tồn tại hoặc không có sẵn.', 404));
+    }
+    // Kiểm tra số lượng mới với tồn kho
+    if (product.quantity < newQuantity) {
+        return next(new AppError(`Không đủ hàng. Chỉ còn ${product.quantity} sản phẩm trong kho.`, 400));
+    }
+
+    // Lấy item hiện tại từ Redis để cập nhật, đảm bảo nó tồn tại
+    const existingProductJSON = await redisClient.hGet(cartKey, productField);
+    if (!existingProductJSON) {
+        return next(new AppError('Sản phẩm không có trong giỏ hàng để cập nhật.', 404));
+    }
+
+    // Cập nhật lại số lượng
+    const cartItem = JSON.parse(existingProductJSON);
+    cartItem.quantity = newQuantity; // Ghi đè số lượng cũ bằng số lượng mới
+
+    // Lưu lại vào Redis
+    await redisClient.hSet(cartKey, productField, JSON.stringify(cartItem));
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Cập nhật số lượng thành công.',
+        data: {
+            item: cartItem
+        }
+    });
 });

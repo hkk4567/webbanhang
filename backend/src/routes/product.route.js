@@ -9,6 +9,7 @@ const router = express.Router();
 // --- ROUTE CÔNG KHAI ---
 // [GET] /api/products -> Lấy danh sách tất cả sản phẩm đang bán
 router.get('/', authMiddleware.checkUser, productController.getAllProducts);
+router.get('/:id', authMiddleware.checkUser, productController.getProductById);
 
 // --- CÁC ROUTE CỦA ADMIN ---
 router.use(authMiddleware.protect, authMiddleware.restrictTo('admin', 'staff'));
@@ -18,7 +19,6 @@ router.post('/', upload.single('image'), productController.createProduct);
 
 
 router.route('/:id')
-    .get(authMiddleware.checkUser, productController.getProductById)
     .patch(upload.single('image'), productController.updateProduct) // Cập nhật cũng có thể có ảnh
     .delete(productController.deleteProduct);
 
