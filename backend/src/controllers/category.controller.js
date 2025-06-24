@@ -1,7 +1,7 @@
 const { Category, Product } = require('../models'); // Giả sử có file index.js quản lý model
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
-
+const { Op } = require('sequelize');
 // === 1. LẤY TẤT CẢ DANH MỤC (CÓ THỂ LẤY THEO CẤU TRÚC CÂY) ===
 // Cách đơn giản: Lấy danh sách phẳng
 exports.getAllCategories = catchAsync(async (req, res, next) => {
@@ -17,7 +17,56 @@ exports.getAllCategories = catchAsync(async (req, res, next) => {
         },
     });
 });
-// (Nâng cao: bạn có thể viết một hàm đệ quy để trả về cấu trúc cây cha-con nếu cần)
+// === HÀM MỚI DÀNH CHO TRANG ADMIN ===
+exports.getAdminCategories = catchAsync(async (req, res, next) => {
+    // 1. Lấy các tham số từ query string
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    const { search, sort } = req.query;
+
+    // 2. Xây dựng điều kiện lọc (where)
+    const whereCondition = {};
+    if (search) {
+        whereCondition.name = { [Op.like]: `%${search}%` };
+    }
+
+    // 3. Xây dựng điều kiện sắp xếp (order)
+    let orderCondition = [['created_at', 'DESC']]; // Mặc định
+    if (sort) {
+        const sortString = String(sort);
+        const direction = sortString.startsWith('-') ? 'DESC' : 'ASC';
+        const field = sortString.startsWith('-') ? sortString.substring(1) : sortString;
+
+        const allowedSortFields = ['name', 'created_at'];
+        if (allowedSortFields.includes(field)) {
+            orderCondition = [[field, direction]];
+        }
+    }
+
+    // 4. Thực hiện truy vấn với findAndCountAll
+    const { count, rows } = await Category.findAndCountAll({
+        where: whereCondition,
+        order: orderCondition,
+        limit,
+        offset,
+    });
+
+    // 5. Trả về kết quả theo định dạng mà trang admin mong đợi
+    res.status(200).json({
+        status: 'success',
+        results: rows.length,
+        data: {
+            categories: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+            },
+        },
+    });
+});
 
 // === 2. LẤY MỘT DANH MỤC ===
 exports.getCategory = catchAsync(async (req, res, next) => {
@@ -38,6 +87,7 @@ exports.getCategory = catchAsync(async (req, res, next) => {
 // === 3. TẠO DANH MỤC MỚI (chỉ admin) ===
 exports.createCategory = catchAsync(async (req, res, next) => {
     const { name, parentId } = req.body;
+
 
     // Kiểm tra xem parentId (nếu có) có hợp lệ không
     if (parentId) {
@@ -71,7 +121,14 @@ exports.updateCategory = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy danh mục với ID này', 404));
     }
 
-    await category.update({ name, parentId });
+    // Tạo object để cập nhật, chỉ chứa các trường được gửi lên
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (parentId) updateData.parentId = parentId;
+
+    // await category.update({ name, parentId, status }); // Cập nhật cả status
+    await category.update(updateData);
+
 
     res.status(200).json({
         status: 'success',

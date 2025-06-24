@@ -7,6 +7,12 @@ const router = express.Router();
 // --- ROUTE CÔNG KHAI ---
 // Bất kỳ ai cũng có thể xem danh sách danh mục và chi tiết một danh mục
 router.get('/', authMiddleware.checkUser, categoryController.getAllCategories);
+router.get(
+    '/admin',
+    protect, // Áp dụng middleware bảo vệ
+    restrictTo('admin'), // Giới hạn chỉ cho admin
+    categoryController.getAdminCategories // Gọi controller
+);
 router.get('/:id', authMiddleware.checkUser, categoryController.getCategory);
 
 // --- CÁC ROUTE CỦA ADMIN ---
