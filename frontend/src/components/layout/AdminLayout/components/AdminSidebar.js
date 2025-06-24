@@ -8,9 +8,8 @@ import styles from './sidebar.module.scss'; // Đổi tên file scss cho nhất 
 import { useAdminAuth } from '../../../../context/AdminAuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faTachometerAlt, faUsers, faBoxOpen, faMugHot, faSignOutAlt, faLayerGroup
+    faTachometerAlt, faUsers, faBoxOpen, faMugHot, faSignOutAlt, faLayerGroup, faTags
 } from '@fortawesome/free-solid-svg-icons';
-
 const cx = classNames.bind(styles);
 
 // Nhận props từ AdminLayout để điều khiển việc hiển thị
@@ -71,6 +70,10 @@ function AdminSidebar({ isMobileOpen, onHide }) {
                             <NavLink to="/admin/products" className={getNavLinkClass}>
                                 <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faMugHot} /></span>
                                 <span>Sản phẩm</span>
+                            </NavLink>
+                            <NavLink to="/admin/categories" className={getNavLinkClass}>
+                                <span className={cx('icon-wrapper')}><FontAwesomeIcon icon={faTags} /></span>
+                                <span>Danh mục sản phẩm</span>
                             </NavLink>
                         </Nav>
                     </Accordion.Body>

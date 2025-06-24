@@ -17,6 +17,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminProductsPage from '../pages/admin/AdminProductsPage'
 import AdminCustomersPage from '../pages/admin/AdminCustomersPage'
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage'
+import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage'
 // Giả sử bạn có trang Dashboard
 const publicRoutes = [
     {
@@ -102,6 +103,12 @@ const adminRoutes = [
     {
         path: '/admin/orders',
         component: AdminOrdersPage,
+        layout: AdminLayout,
+        isPrivate: true
+    },
+    {
+        path: '/admin/categories',
+        component: AdminCategoriesPage,
         layout: AdminLayout,
         isPrivate: true
     }
