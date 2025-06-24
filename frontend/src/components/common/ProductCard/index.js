@@ -99,12 +99,10 @@ function ProductCard({ product, onViewProduct, viewMode = 'grid' }) {
                     <img src={imageUrl || PLACEHOLDER_IMAGE} alt={name} />
                 </Link>
 
-                {/* Badge Hết hàng */}
                 {isOutOfStock && (
                     <div className={cx('out-of-stock-badge')}>Hết hàng</div>
                 )}
 
-                {/* Các nút hành động khi hover (chỉ ở grid view) */}
                 <div className={cx('product-actions-overlay')}>
                     <button
                         className={cx('action-icon', 'add-to-cart')}
@@ -126,28 +124,28 @@ function ProductCard({ product, onViewProduct, viewMode = 'grid' }) {
 
             {/* KHỐI 2: THÔNG TIN SẢN PHẨM */}
             <div className={cx('product-info')}>
-                <h3 className={cx('product-name')}>
-                    <Link to={`/product/${id}`}>{name}</Link>
-                </h3>
+                <div className={cx('product-meta')}>
+                    {category?.name && (
+                        <Link to={`/products/${category.id}`} className={cx('categoryBadge')}>
+                            {category.name}
+                        </Link>
+                    )}
+                    <div className={cx('product-name')}>
+                        <Link to={`/product/${id}`} title={name}>{name}</Link>
+                    </div>
+                </div>
+
+                {/* Giá sản phẩm, được định vị tuyệt đối bởi SCSS */}
                 <div className={cx('product-price')}>
                     <p>{formattedPrice}</p>
                 </div>
 
-                {/* --- NỘI DUNG CHỈ HIỂN THỊ Ở LIST VIEW --- */}
                 {viewMode === 'list' && (
+                    // Sử dụng React Fragment (<>) để nhóm các phần tử
                     <>
-                        {category?.name && (
-                            <div className={cx('product-category')}>
-                                <Link to={`/products/${category.id}`}>{category.name}</Link>
-                            </div>
-                        )}
-                        <p className={cx('product-description')}>{description}</p>
+                        <p className={cx('product-description')} title={description}>{description}</p>
                         <div className={cx('product-actions-list')}>
-                            <button
-                                className={cx('btn-action')}
-                                onClick={handleAddToCart}
-                                disabled={isOutOfStock}
-                            >
+                            <button className={cx('btn-action')} onClick={handleAddToCart} disabled={isOutOfStock}>
                                 <FontAwesomeIcon icon={faCartPlus} className={cx('btn-icon')} />
                                 {isOutOfStock ? "Hết hàng" : "Thêm vào giỏ"}
                             </button>
