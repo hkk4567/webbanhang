@@ -24,3 +24,7 @@ export const getOrderById = (id) => {
 export const updateOrderStatus = (id, status) => {
     return apiClient.admin.patch(`/orders/${id}/status`, { status });
 };
+export const getOrdersByUserId = (userId, params) => {
+    // Gọi đến endpoint mới đã tạo
+    return apiClient.admin.get(`/orders/user/${userId}`, { params });
+};

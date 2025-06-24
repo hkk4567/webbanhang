@@ -10,7 +10,7 @@ import React from 'react';
  * @param {string} props.action.label - Nhãn của nút (ví dụ: 'Xem chi tiết').
  * @param {function} props.onActionClick - Hàm callback được gọi khi nút hành động được nhấn, nhận vào ID của hàng.
  */
-function TableCard({ title, headers, data, action, onActionClick }) {
+function TableCard({ title, headers, data, action, onActionClick, originalData }) {
     return (
         <div className="card shadow-sm h-100">
             <div className="card-header">{title}</div>
@@ -27,7 +27,6 @@ function TableCard({ title, headers, data, action, onActionClick }) {
                         <tbody>
                             {data.map((row, rowIndex) => {
                                 // Giả sử phần tử đầu tiên của mỗi hàng là ID duy nhất
-                                const rowId = row[0];
                                 return (
                                     <tr key={rowIndex}>
                                         {/* Render các ô dữ liệu */}
@@ -38,7 +37,7 @@ function TableCard({ title, headers, data, action, onActionClick }) {
                                             <td>
                                                 <button
                                                     className="btn btn-sm btn-outline-primary"
-                                                    onClick={() => onActionClick(rowId)}
+                                                    onClick={() => onActionClick(originalData[rowIndex])}
                                                 >
                                                     {action.label || 'Xem'}
                                                 </button>

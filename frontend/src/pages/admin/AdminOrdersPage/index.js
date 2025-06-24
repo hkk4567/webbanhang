@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Modal, Button, Form, Row, Col, InputGroup, Spinner, Table, Badge } from 'react-bootstrap';
 import classNames from 'classnames/bind';
 import styles from './AdminOrdersPage.module.scss';
@@ -35,7 +36,10 @@ function AdminOrdersPage() {
     const [paginationData, setPaginationData] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-
+    const [searchParams, setSearchParams] = useSearchParams();
+    // Lấy giá trị của tham số 'search'
+    const searchQuery = searchParams.get('search');
+    const productIdQuery = searchParams.get('productId');
     // --- STATE ĐIỀU KHIỂN BỘ LỌC ---
     const [filters, setFilters] = useState({
         search: '',
@@ -70,6 +74,14 @@ function AdminOrdersPage() {
                 status, startDate, endDate, province, district, ward,
                 sort: '-created_at', // Giả sử sort order cố định
             };
+            if (productIdQuery) {
+                params.productId = productIdQuery;
+                params.forceStatus = 'delivered';
+            } else if (debouncedSearch) { // Nếu không có productId thì mới dùng search
+                params.search = debouncedSearch;
+            } else if (searchQuery) { // Xử lý trường hợp từ link của khách hàng
+                params.search = searchQuery;
+            }
             const response = await getOrders(params);
             setOrders(response.data.data.orders);
             setPaginationData(response.data.data.pagination);
@@ -79,7 +91,8 @@ function AdminOrdersPage() {
             setIsLoading(false);
         }
         // Dependency array giờ chỉ chứa các giá trị nguyên thủy
-    }, [requestedPage, debouncedSearch, status, startDate, endDate, province, district, ward]);
+    }, [requestedPage, debouncedSearch, status, startDate, endDate, province, district, ward, searchQuery, productIdQuery]);
+
     useEffect(() => {
         fetchOrders();
     }, [fetchOrders]);
@@ -96,6 +109,16 @@ function AdminOrdersPage() {
         }
         // Dependency array chỉ chứa các giá trị lọc
     }, [debouncedSearch, status, startDate, endDate, province, district, ward, goToPage, paginationProps.currentPage]);
+
+    useEffect(() => {
+        // Nếu URL có productId, hãy tự động cập nhật bộ lọc trên UI
+        if (productIdQuery) {
+            setFilters(prev => ({
+                ...prev,
+                status: 'delivered' // Tự động chọn "Giao thành công" trong dropdown
+            }));
+        }
+    }, [productIdQuery]);
 
     // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
     const handleFilterChange = (e) => {
@@ -163,6 +186,24 @@ function AdminOrdersPage() {
         return <Badge bg={bg}>{label}</Badge>;
     };
 
+    const handleShowAll = useCallback(() => {
+        // 1. Reset state của các bộ lọc về giá trị ban đầu
+        setFilters({
+            search: '',
+            status: '',
+            startDate: '',
+            endDate: '',
+            province: '',
+            district: '',
+            ward: '',
+        });
+        // 2. Reset component AddressSelector (quan trọng để UI đồng bộ)
+        setAddressSelectorKey(Date.now());
+        // 3. Xóa tất cả các tham số khỏi URL (?search=..., ?status=...)
+        // Đây là bước quan trọng nhất, nó sẽ kích hoạt useEffect để tải lại dữ liệu gốc
+        setSearchParams({});
+    }, [setSearchParams]);
+
     return (
         <main className="mt-5 pt-3 pb-6 bgMain">
             <div className="container-fluid">
@@ -180,11 +221,24 @@ function AdminOrdersPage() {
                                     </Form.Group>
                                 </Col>
                                 <Col lg={3} md={6}>
-                                    <Form.Group>
+                                    {/* Thêm class `cx('filterGroup')` vào Form.Group */}
+                                    <Form.Group className={cx('filterGroup')}>
                                         <Form.Label className="fw-bold">Trạng thái</Form.Label>
-                                        <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
+                                        <Form.Select
+                                            name="status"
+                                            value={filters.status}
+                                            onChange={handleFilterChange}
+                                            disabled={!!productIdQuery}
+                                        >
                                             {statusFilters.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                         </Form.Select>
+
+                                        {/* Thêm class `cx('filterNotice')` vào Form.Text */}
+                                        {productIdQuery && (
+                                            <Form.Text muted className={cx('filterNotice')}>
+                                                Nếu muốn xem tất cả, hãy bấm vào nút hiển thị tất cả.
+                                            </Form.Text>
+                                        )}
                                     </Form.Group>
                                 </Col>
                                 <Col lg={5} md={6}>
@@ -220,8 +274,13 @@ function AdminOrdersPage() {
                             </Row>
                             <Row className="mt-3">
                                 <Col className="text-end">
-                                    <Button variant="outline-secondary" onClick={handleResetFilters}>
-                                        <i className="bi bi-arrow-clockwise me-2"></i> Xóa bộ lọc
+                                    {/* Nút này chỉ xóa các ô input, hữu ích khi người dùng muốn nhập lại từ đầu */}
+                                    <Button variant="outline-secondary" onClick={handleResetFilters} className="me-2">
+                                        <i className="bi bi-arrow-clockwise me-2"></i> Đặt lại form
+                                    </Button>
+                                    {/* Nút này mạnh hơn, nó sẽ xóa bộ lọc và tải lại toàn bộ danh sách */}
+                                    <Button variant="primary" onClick={handleShowAll}>
+                                        <i className="bi bi-list-ul me-2"></i> Hiển thị tất cả
                                     </Button>
                                 </Col>
                             </Row>

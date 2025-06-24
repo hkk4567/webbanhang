@@ -35,3 +35,17 @@
         background-color: #dc3545; // danger
     }
 }
+
+.filterGroup {
+    position: relative; // Cần thiết để định vị tuyệt đối cho phần tử con
+}
+
+// Class cho dòng text thông báo
+.filterNotice {
+    position: absolute; // Định vị tuyệt đối so với .filterGroup
+    bottom: -20px; // Nằm ở dưới cùng của thẻ cha
+    left: 0; // Bắt đầu từ bên trái
+    font-size: 0.8em; // Cho chữ nhỏ hơn một chút
+    color: red !important;
+    // không cần color: muted vì Form.Text đã có sẵn
+}

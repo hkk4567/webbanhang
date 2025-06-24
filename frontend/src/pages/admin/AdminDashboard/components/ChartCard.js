@@ -1,6 +1,6 @@
-// src/pages/AdminDashboard/components/ChartCard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
+import { Spinner, Alert } from 'react-bootstrap'; // Import thêm
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -10,54 +10,41 @@ import {
     Title,
     Tooltip,
     Legend,
+    Filler // <-- BƯỚC 1: IMPORT FILLER PLUGIN
 } from 'chart.js';
+// Import hàm API
+import { getSalesChartData } from '../../../../api/statsService';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+// --- BƯỚC 2: ĐĂNG KÝ FILLER PLUGIN ---
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
-// --- Helper Functions ---
 
-// Hàm định dạng ngày thành chuỗi 'YYYY-MM-DD' cho input
+
+// Hàm helper để định dạng ngày (không đổi)
 const formatDateForInput = (date) => {
     return date.toISOString().split('T')[0];
 };
-
-// Hàm tạo dữ liệu giả cho biểu đồ dựa trên khoảng thời gian
-// Trong ứng dụng thật, bạn sẽ gọi API ở đây
-const generateMockDataForRange = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const labels = [];
-    const data = [];
-    let currentDate = start;
-
-    // Tạo nhãn (label) cho mỗi ngày trong khoảng đã chọn
-    while (currentDate <= end) {
-        // Chỉ lấy ngày và tháng để nhãn không quá dài
-        labels.push(`${currentDate.getDate()}/${currentDate.getMonth() + 1}`);
-        // Tạo dữ liệu doanh thu ngẫu nhiên cho ngày đó
-        data.push(Math.floor(Math.random() * (2500000 - 500000 + 1)) + 500000);
-        currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return { labels, data };
-};
-
 
 function ChartCard() {
     // --- State Management ---
     const [chartData, setChartData] = useState({ labels: [], datasets: [] });
 
-    // Đặt giá trị mặc định là 7 ngày gần nhất
+    // State cho việc chọn ngày
     const today = new Date();
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 7);
+    sevenDaysAgo.setDate(today.getDate() - 6); // Sửa lại để lấy đủ 7 ngày
 
     const [startDate, setStartDate] = useState(formatDateForInput(sevenDaysAgo));
     const [endDate, setEndDate] = useState(formatDateForInput(today));
 
-    // Hàm xử lý việc lọc dữ liệu
-    const handleFilterData = () => {
-        // Kiểm tra logic ngày tháng
+    // --- BƯỚC 3: THÊM STATE CHO LOADING VÀ LỖI ---
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    // --- BƯỚC 4: SỬA LẠI HÀM LỌC DỮ LIỆU ĐỂ GỌI API ---
+    // Dùng useCallback để tối ưu hóa
+    const fetchChartData = useCallback(async () => {
+        // Validation ngày
         if (!startDate || !endDate) {
             alert('Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.');
             return;
@@ -67,68 +54,105 @@ function ChartCard() {
             return;
         }
 
-        console.log(`Lọc dữ liệu từ ${startDate} đến ${endDate}`);
+        setIsLoading(true);
+        setError(null);
 
-        // Tạo dữ liệu giả mới dựa trên khoảng ngày đã chọn
-        const { labels, data } = generateMockDataForRange(startDate, endDate);
+        try {
+            const params = { startDate, endDate };
+            // Gọi API thật sự
+            const response = await getSalesChartData(params);
+            const apiData = response.data.data; // Giả sử API trả về { labels: [...], data: [...] }
 
-        setChartData({
-            labels: labels,
-            datasets: [{
-                label: 'Doanh Thu (VND)',
-                data: data,
-                fill: true,
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.3,
-            }]
-        });
-    };
+            // Cập nhật state cho Chart.js
+            setChartData({
+                labels: apiData.labels,
+                datasets: [{
+                    label: 'Doanh Thu (VND)',
+                    data: apiData.data,
+                    fill: true, // Cho phép tô màu nền
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    tension: 0.3,
+                }]
+            });
+
+        } catch (err) {
+            console.error("Lỗi khi tải dữ liệu biểu đồ:", err);
+            setError("Không thể tải dữ liệu biểu đồ. Vui lòng thử lại.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [startDate, endDate]); // Phụ thuộc vào startDate và endDate
+
 
     // Tải dữ liệu lần đầu khi component được render
     useEffect(() => {
-        handleFilterData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Mảng rỗng đảm bảo useEffect chỉ chạy một lần
+        fetchChartData();
+    }, [fetchChartData]); // Phụ thuộc vào hàm đã được useCallback
 
 
     // --- Render Component ---
     return (
         <div className="card shadow-sm">
-            <div className="card-header d-flex justify-content-between align-items-center">
+            <div className="card-header d-flex justify-content-between align-items-center flex-wrap">
                 <h5 className="mb-0">Biểu Đồ Doanh Thu</h5>
-            </div>
-            <div className="card-body">
+
                 {/* Khu vực chọn khoảng thời gian */}
-                <div className="d-flex flex-wrap justify-content-center align-items-center gap-3 mb-4">
+                <div className="d-flex flex-wrap justify-content-end align-items-center gap-2">
                     <div className="d-flex align-items-center gap-2">
-                        <label htmlFor="startDate" className="form-label mb-0 fw-medium">Từ ngày:</label>
+                        <label htmlFor="startDate" className="form-label mb-0 fw-medium small">Từ:</label>
                         <input
                             type="date"
                             id="startDate"
-                            className="form-control"
+                            className="form-control form-control-sm"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                     </div>
                     <div className="d-flex align-items-center gap-2">
-                        <label htmlFor="endDate" className="form-label mb-0 fw-medium">Đến ngày:</label>
+                        <label htmlFor="endDate" className="form-label mb-0 fw-medium small">Đến:</label>
                         <input
                             type="date"
                             id="endDate"
-                            className="form-control"
+                            className="form-control form-control-sm"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                         />
                     </div>
-                    <button onClick={handleFilterData} className="btn btn-primary">
-                        <i className="bi bi-funnel-fill me-2"></i> {/* Thêm icon cho đẹp */}
-                        Lọc
+                    {/* Nút Lọc giờ sẽ gọi fetchChartData */}
+                    <button onClick={fetchChartData} className="btn btn-primary btn-sm" disabled={isLoading}>
+                        {isLoading ? (
+                            <Spinner as="span" animation="border" size="sm" />
+                        ) : (
+                            <i className="bi bi-funnel-fill"></i>
+                        )}
                     </button>
                 </div>
-
-                {/* Biểu đồ */}
-                <Line data={chartData} />
+            </div>
+            <div className="card-body">
+                {/* --- BƯỚC 5: HIỂN THỊ TRẠNG THÁI LOADING/ERROR CHO BIỂU ĐỒ --- */}
+                {isLoading ? (
+                    <div className="text-center p-5">
+                        <Spinner animation="border" />
+                        <p className="mt-2">Đang tải dữ liệu...</p>
+                    </div>
+                ) : error ? (
+                    <Alert variant="danger">{error}</Alert>
+                ) : (
+                    <div style={{ height: '350px' }}>
+                        <Line
+                            data={chartData}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top' },
+                                    title: { display: false }
+                                }
+                            }}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );
