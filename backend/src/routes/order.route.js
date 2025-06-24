@@ -16,7 +16,7 @@ router.get('/:id', orderController.getOrderById);
 // --- CÁC ROUTE CỦA ADMIN/STAFF ---
 // Lấy tất cả đơn hàng (chỉ admin/staff được xem)
 router.get('/', restrictTo('admin', 'staff'), orderController.getAllOrders);
-
+router.get('/user/:userId', orderController.getOrdersByUserId);
 // Cập nhật trạng thái của một đơn hàng
 router.patch(
     '/:id/status', // Endpoint rõ ràng cho việc cập nhật status

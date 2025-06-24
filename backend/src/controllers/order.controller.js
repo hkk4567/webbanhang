@@ -183,10 +183,14 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     // 2. Lọc và Tìm kiếm
-    const { search, status, startDate, endDate, province, district, ward } = req.query;
+    const { search, status, startDate, endDate, province, district, ward, productId, forceStatus } = req.query;
     const whereCondition = {};
-
-    if (status) {
+    const includeConditions = [];
+    if (forceStatus && ['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(forceStatus)) {
+        // Nếu có forceStatus hợp lệ, ưu tiên dùng nó
+        whereCondition.status = forceStatus;
+    } else if (status) {
+        // Nếu không, mới dùng status từ bộ lọc thông thường
         whereCondition.status = status;
     }
     if (startDate && endDate) {
@@ -195,11 +199,20 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
         };
     }
     if (search) {
-        whereCondition[Op.or] = [
-            { id: { [Op.like]: `%${search}%` } }, // Tìm theo ID đơn hàng
-            { shippingName: { [Op.like]: `%${search}%` } },
-            { shippingPhone: { [Op.like]: `%${search}%` } }
-        ];
+        // Kiểm tra xem chuỗi tìm kiếm có phải là một số nguyên dương không
+        const isNumericId = !isNaN(search) && parseInt(search, 10) > 0;
+
+        if (isNumericId) {
+            // Nếu là số, chỉ tìm kiếm chính xác theo ID
+            whereCondition.id = parseInt(search, 10);
+        } else {
+            // Nếu không phải là số (là text), tìm kiếm mờ theo tên và SĐT
+            whereCondition[Op.or] = [
+                { shippingName: { [Op.like]: `%${search}%` } },
+                { shippingPhone: { [Op.like]: `%${search}%` } }
+                // Không tìm theo ID ở đây nữa
+            ];
+        }
     }
     if (province) {
         whereCondition.shippingProvince = province;
@@ -209,6 +222,18 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
     }
     if (ward) {
         whereCondition.shippingWard = ward;
+    }
+
+    if (productId && !isNaN(productId)) { // Kiểm tra xem productId có hợp lệ không
+        includeConditions.push({
+            model: OrderItem,
+            as: 'items',
+            where: {
+                // Lọc chính xác theo ID của sản phẩm
+                productId: parseInt(productId, 10)
+            },
+            required: true, // Chỉ trả về Order có chứa sản phẩm này
+        });
     }
 
     // 3. Sắp xếp
@@ -221,6 +246,7 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
         where: whereCondition,
         // (Tùy chọn) Include để lấy tên user nếu cần
         // include: [{ model: User, as: 'user', attributes: ['fullName'] }],
+        include: includeConditions,
         limit,
         offset,
         order: [[orderField, orderDirection]],
@@ -238,6 +264,52 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
                 currentPage: page,
             },
         },
+    });
+});
+
+exports.getOrdersByUserId = catchAsync(async (req, res, next) => {
+    // Lấy userId từ tham số URL
+    const { userId } = req.params;
+
+    // Lấy tham số phân trang từ query string
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 5;
+    const offset = (page - 1) * limit;
+
+    // Kiểm tra xem user có tồn tại không (tùy chọn nhưng nên có)
+    const user = await User.findByPk(userId);
+    if (!user) {
+        return next(new AppError('Không tìm thấy người dùng với ID này.', 404));
+    }
+
+    // Thực hiện truy vấn tương tự getMyOrders
+    const { count, rows } = await Order.findAndCountAll({
+        where: {
+            userId: userId,        // Điều kiện 1: userId phải khớp
+            status: 'delivered'    // Điều kiện 2: status phải là 'delivered'
+        },
+        include: [
+            {
+                model: OrderItem,
+                as: 'items',
+            }
+        ],
+        order: [['created_at', 'DESC']],
+        limit,
+        offset,
+        distinct: true,
+    });
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            orders: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+            }
+        }
     });
 });
 

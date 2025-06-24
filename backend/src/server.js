@@ -31,11 +31,12 @@ const corsOptions = {
     origin: 'http://localhost:3000',
     // Cho phép gửi credentials (cookie, headers authorization)
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Auth-Scope'],
 };
 
 // Sử dụng cấu hình cors đã được định nghĩa
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
-
 // Log các HTTP request ra console (chỉ trong môi trường development)
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
