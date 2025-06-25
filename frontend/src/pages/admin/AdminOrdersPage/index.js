@@ -98,17 +98,13 @@ function AdminOrdersPage() {
     }, [fetchOrders]);
 
     useEffect(() => {
-        // Bỏ qua lần render đầu tiên
         if (isInitialMount.current) {
             isInitialMount.current = false;
-            return;
-        }
-        // Nếu trang hiện tại khác 1 thì mới reset
-        if (paginationProps.currentPage !== 1) {
+        } else {
+            // Chỉ reset trang sau lần mount đầu tiên
             goToPage(1);
         }
-        // Dependency array chỉ chứa các giá trị lọc
-    }, [debouncedSearch, status, startDate, endDate, province, district, ward, goToPage, paginationProps.currentPage]);
+    }, [debouncedSearch, status, startDate, endDate, province, district, ward, productIdQuery, goToPage]);
 
     useEffect(() => {
         // Nếu URL có productId, hãy tự động cập nhật bộ lọc trên UI

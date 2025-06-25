@@ -1,6 +1,10 @@
 import axios from 'axios';
 
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+console.log(`API URL: ${BASE_URL}`
+
+);
+
 // --- INSTANCE CÔNG KHAI / CHUNG ---
 export const publicApiClient = axios.create({
     baseURL: BASE_URL,

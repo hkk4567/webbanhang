@@ -52,16 +52,55 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
     }, []);
 
     const handleAddressChange = useCallback((addressData) => {
-        // `setFormData` được React đảm bảo là ổn định
-        setFormData(prev => ({
-            ...prev,
-            // Sửa lại cho khớp với AddressSelector mới
-            province: addressData.provinceName,
-            district: addressData.districtName,
-            ward: addressData.wardName,
-        }));
-    }, []);
+        // `addressData` là cái mới từ AddressSelector, ví dụ: { provinceName: 'A', districtName: 'B', wardName: 'C' }
 
+        // `prev` là state `formData` hiện tại
+        setFormData(prev => {
+            // Lấy ra các giá trị địa chỉ hiện tại từ state
+            const currentProvince = prev.province;
+            const currentDistrict = prev.district;
+            const currentWard = prev.ward;
+
+            // Lấy các giá trị mới từ callback
+            const newProvince = addressData.provinceName;
+            const newDistrict = addressData.districtName;
+            const newWard = addressData.wardName;
+
+            // --- ĐIỀU KIỆN QUYẾT ĐỊNH ---
+            // So sánh xem có sự thay đổi thực sự nào không
+            const hasChanged =
+                currentProvince !== newProvince ||
+                currentDistrict !== newDistrict ||
+                currentWard !== newWard;
+
+            // Nếu không có gì thay đổi, trả về state cũ để tránh re-render và ghi đè
+            if (!hasChanged) {
+                return prev;
+            }
+
+            // Nếu có sự thay đổi, tiến hành cập nhật state
+            // Logic reset cấp dưới khi cấp trên thay đổi
+            let updatedDistrict = newDistrict;
+            let updatedWard = newWard;
+
+            if (currentProvince !== newProvince) {
+                // Nếu đổi tỉnh, reset huyện và xã
+                updatedDistrict = '';
+                updatedWard = '';
+            } else if (currentDistrict !== newDistrict) {
+                // Nếu chỉ đổi huyện, reset xã
+                updatedWard = '';
+            }
+
+            // Trả về state mới đã được cập nhật chính xác
+            return {
+                ...prev,
+                province: newProvince,
+                district: updatedDistrict,
+                ward: updatedWard,
+            };
+        });
+    }, []);
     const handleSaveClick = () => {
         // --- BƯỚC 3: Validate dữ liệu và chuẩn bị gửi đi ---
         // Validate mật khẩu chỉ khi thêm mới
@@ -142,7 +181,11 @@ function CustomerFormModal({ show, handleClose, onSave, customerToEdit }) {
                             onChange={handleAddressChange}
                             // Dùng key để reset AddressSelector khi đổi giữa các khách hàng
                             key={customerToEdit?.id || 'new-customer'}
-                            initialValue={isEditing ? { city: formData.province, district: formData.district, ward: formData.ward } : null}
+                            initialValue={isEditing ? {
+                                city: customerToEdit.province,
+                                district: customerToEdit.district,
+                                ward: customerToEdit.ward
+                            } : null}
                         />
                     </Row>
 

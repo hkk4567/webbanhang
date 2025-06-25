@@ -1,6 +1,7 @@
 // src/components/Layout/AdminLayout/components/AdminHeader.js
 
 import React, { useState, useEffect, useRef } from 'react';
+import io from 'socket.io-client';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Container, Nav, Dropdown, Button, Badge, Spinner } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -26,8 +27,10 @@ const timeSince = (date) => {
     return Math.floor(seconds) + " giây trước";
 };
 const formatCurrency = (amount) => Number(amount).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+const SOCKET_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 function AdminHeader({ onToggleSidebar }) {
     const { admin, logout } = useAdminAuth();
+    const socketRef = useRef(null);
     const navigate = useNavigate();
 
     const [notifications, setNotifications] = useState([]);
@@ -40,27 +43,56 @@ function AdminHeader({ onToggleSidebar }) {
         navigate('/admin/login');
     };
     useEffect(() => {
-        const fetchNotifications = async () => {
+        // --- CHỈ TẠO SOCKET NẾU CHƯA TỒN TẠI ---
+        if (!socketRef.current) {
+            // 1. Tạo và lưu socket vào ref
+            socketRef.current = io(SOCKET_SERVER_URL, {
+                // Tùy chọn: Thêm các option để kết nối lại
+                reconnection: true,
+                reconnectionAttempts: 5,
+            });
+
+            const socket = socketRef.current; // Dùng biến cục bộ cho dễ đọc
+
+            // 2. Thiết lập các trình lắng nghe sự kiện
+            socket.on('connect', () => {
+                socket.emit('joinAdminRoom');
+            });
+
+            socket.on('new_order', (newOrderNotification) => {
+                setNotifications(prev => [newOrderNotification, ...prev]);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Đã ngắt kết nối với Socket.IO server.');
+            });
+        }
+
+        // --- 3. Lấy danh sách thông báo ban đầu ---
+        // Logic này không thay đổi
+        const fetchInitialNotifications = async () => {
             setIsLoadingNotif(true);
             try {
                 const response = await getOrderNotificationsApi();
                 setNotifications(response.data.data.notifications);
             } catch (error) {
-                console.error("Không thể tải thông báo:", error);
-                // Có thể hiển thị lỗi cho người dùng
+                console.error("Không thể tải thông báo ban đầu:", error);
             } finally {
                 setIsLoadingNotif(false);
             }
         };
+        fetchInitialNotifications();
 
-        fetchNotifications();
-
-        // (Nâng cao) Tự động làm mới thông báo sau mỗi 1 phút
-        const intervalId = setInterval(fetchNotifications, 60000);
-
-        // Dọn dẹp interval khi component unmount
-        return () => clearInterval(intervalId);
-
+        // --- 4. Dọn dẹp ---
+        // Hàm return của useEffect sẽ được gọi khi component unmount
+        return () => {
+            // Khi component thực sự unmount (ví dụ: logout), chúng ta mới ngắt kết nối
+            if (socketRef.current) {
+                console.log('Ngắt kết nối Socket.IO khi unmount component.');
+                socketRef.current.disconnect();
+                socketRef.current = null; // Reset ref
+            }
+        };
     }, []);
 
     useEffect(() => {
