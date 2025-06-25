@@ -28,3 +28,10 @@ export const getOrdersByUserId = (userId, params) => {
     // Gọi đến endpoint mới đã tạo
     return apiClient.admin.get(`/orders/user/${userId}`, { params });
 };
+export const getOrderNotificationsApi = () => {
+    // Luôn dùng apiClient.admin vì đây là chức năng của admin
+    return apiClient.admin.get('/orders/notifications');
+};
+export const markNotificationsAsReadApi = () => {
+    return apiClient.admin.post('/orders/notifications/mark-as-read');
+};
