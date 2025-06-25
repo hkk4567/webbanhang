@@ -8,7 +8,7 @@ router.use(protect);
 router.get('/my-orders', orderController.getMyOrders);
 // API để tạo đơn hàng mới
 router.post('/', orderController.createOrder);
-
+router.get('/notifications', restrictTo('admin', 'staff'), orderController.getOrderNotifications);
 // [GET] /api/orders/:id -> Lấy chi tiết một đơn hàng CỦA CHÍNH MÌNH
 // Logic kiểm tra chủ sở hữu đơn hàng sẽ nằm trong controller
 router.get('/:id', orderController.getOrderById);
@@ -17,6 +17,7 @@ router.get('/:id', orderController.getOrderById);
 // Lấy tất cả đơn hàng (chỉ admin/staff được xem)
 router.get('/', restrictTo('admin', 'staff'), orderController.getAllOrders);
 router.get('/user/:userId', orderController.getOrdersByUserId);
+router.post('/notifications/mark-as-read', orderController.markAllNotificationsAsRead);
 // Cập nhật trạng thái của một đơn hàng
 router.patch(
     '/:id/status', // Endpoint rõ ràng cho việc cập nhật status

@@ -371,3 +371,31 @@ exports.getMyOrders = catchAsync(async (req, res, next) => {
         }
     });
 });
+
+exports.getOrderNotifications = catchAsync(async (req, res, next) => {
+    const newOrders = await Order.findAll({
+        where: { isRead: false }, // <<< CHỈ LẤY CÁC ĐƠN HÀNG CHƯA ĐỌC
+        attributes: ['id', 'shippingName', 'totalPrice', 'created_at'],
+        order: [['created_at', 'DESC']],
+        limit: 10,
+    });
+
+    res.status(200).json({
+        status: 'success',
+        results: newOrders.length,
+        data: {
+            notifications: newOrders,
+        },
+    });
+});
+exports.markAllNotificationsAsRead = catchAsync(async (req, res, next) => {
+    // Cập nhật tất cả các đơn hàng chưa đọc thành đã đọc
+    await Order.update(
+        { isRead: true },
+        { where: { isRead: false } }
+    );
+    res.status(200).json({
+        status: 'success',
+        message: 'Tất cả thông báo đã được đánh dấu là đã đọc.'
+    });
+});

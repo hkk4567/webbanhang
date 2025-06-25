@@ -65,6 +65,12 @@ Order.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    isRead: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
+        field: 'is_read', // Tên cột trong CSDL
+    },
 }, {
     sequelize,
     modelName: 'Order',
