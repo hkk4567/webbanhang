@@ -120,7 +120,15 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 
     // 8. Nếu transaction thành công, xóa giỏ hàng khỏi Redis
     await redisClient.del(cartKey);
-
+    // Chuẩn bị dữ liệu thông báo để gửi đi
+    const notificationData = {
+        id: result.id,
+        shippingName: result.shippingName,
+        totalPrice: result.totalPrice,
+        created_at: result.created_at,
+    };
+    // Dùng `req.io` đã được inject để phát sự kiện đến phòng của admin
+    req.io.to('admin_notifications').emit('new_order', notificationData);
     // 9. Gửi response
     res.status(201).json({
         status: 'success',

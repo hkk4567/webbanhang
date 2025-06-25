@@ -5,6 +5,8 @@ require('dotenv').config();
 
 // 2. Import các thư viện và module cần thiết
 const express = require('express');
+const http = require('http'); // Cần module http của Node
+const { Server } = require("socket.io"); // Import Server từ socket.io
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const morgan = require('morgan'); // Thêm morgan để log request
@@ -20,7 +22,13 @@ const errorHandler = require('./middlewares/errorHandler');
 const AppError = require('./utils/appError');
 // 3. Khởi tạo ứng dụng Express
 const app = express();
-
+const server = http.createServer(app); // Tạo một server HTTP từ app Express
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:3000", // URL của frontend React
+        methods: ["GET", "POST"]
+    }
+});
 // 4. Sử dụng các Middleware CƠ BẢN (phải được đặt trước các routes)
 // Tăng cường bảo mật cho các HTTP headers
 app.use(helmet());
@@ -62,6 +70,25 @@ app.get('/api/healthcheck', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
+io.on('connection', (socket) => {
+    console.log('Một client đã kết nối:', socket.id);
+
+    // Lắng nghe sự kiện khi một admin tham gia
+    socket.on('joinAdminRoom', () => {
+        console.log(`Client ${socket.id} đã tham gia phòng admin.`);
+        socket.join('admin_notifications'); // Cho socket này vào phòng
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Client đã ngắt kết nối:', socket.id);
+    });
+});
+
 // Gắn các routes của ứng dụng vào
 app.use('/api', mainRoutes);
 
@@ -76,7 +103,7 @@ app.use(errorHandler);
 
 // 8. Khởi động Server
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`🚀 Server đang chạy trên port ${PORT} ở môi trường ${process.env.NODE_ENV}`);
 });
 
