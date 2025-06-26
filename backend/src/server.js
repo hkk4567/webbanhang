@@ -26,7 +26,8 @@ const server = http.createServer(app); // Tạo một server HTTP từ app Expre
 const io = new Server(server, {
     cors: {
         origin: "http://localhost:3000", // URL của frontend React
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
+        credentials: true // Cho phép gửi cookie và headers authorization
     }
 });
 // 4. Sử dụng các Middleware CƠ BẢN (phải được đặt trước các routes)

@@ -210,7 +210,12 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
     }
 
     await product.update(updateData);
+    await product.reload({ include: 'category' });
 
+    // --- PHẦN MỚI: PHÁT SỰ KIỆN REAL-TIME ---
+    // Dùng `req.io` đã được inject để phát sự kiện đến tất cả client
+    // Gửi đi toàn bộ object sản phẩm đã được cập nhật
+    req.io.emit('product_updated', product.toJSON());
     res.status(200).json({
         status: 'success',
         data: { product },
