@@ -113,11 +113,9 @@ function Product() {
         }
 
         // Chỉ reset khi trang hiện tại khác 1 để tránh gọi lại API không cần thiết
-        if (paginationProps.currentPage !== 1) {
-            goToPage(1);
-        }
+        goToPage(1);
         // Thêm các dependency còn thiếu vào mảng
-    }, [categoryId, selectedPriceRanges, sortOrder, goToPage, paginationProps.currentPage]);
+    }, [categoryId, selectedPriceRanges, sortOrder, goToPage]);
 
     // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
     const handleCategoryFilter = (catId) => {
