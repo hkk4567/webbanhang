@@ -119,9 +119,23 @@ function AdminOrdersPage() {
     // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
-    };
 
+        setFilters(prev => {
+            const newFilters = { ...prev, [name]: value };
+
+            // Nếu người dùng thay đổi startDate và nó lớn hơn endDate hiện tại
+            if (name === 'startDate' && newFilters.endDate && value > newFilters.endDate) {
+                newFilters.endDate = value; // Tự động đặt endDate bằng startDate mới
+            }
+
+            // Nếu người dùng thay đổi endDate và nó nhỏ hơn startDate hiện tại
+            if (name === 'endDate' && newFilters.startDate && value < newFilters.startDate) {
+                newFilters.startDate = value; // Tự động đặt startDate bằng endDate mới
+            }
+
+            return newFilters;
+        });
+    };
     const handleAddressFilterChange = useCallback((addressData) => {
         // Chỉ cập nhật nếu dữ liệu thực sự thay đổi để tránh re-render thừa
         setFilters(prev => {
@@ -247,6 +261,7 @@ function AdminOrdersPage() {
                                             name="startDate"
                                             value={filters.startDate}
                                             onChange={handleFilterChange}
+                                            max={filters.endDate || ''}
                                             aria-label="Ngày bắt đầu"
                                         />
 
@@ -257,6 +272,7 @@ function AdminOrdersPage() {
                                             name="endDate"
                                             value={filters.endDate}
                                             onChange={handleFilterChange}
+                                            min={filters.startDate || ''}
                                             aria-label="Ngày kết thúc"
                                         />
                                     </InputGroup>
