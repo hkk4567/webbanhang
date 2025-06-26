@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import io from 'socket.io-client'; // (MỚI) Import socket.io-client
+import { toast } from 'react-toastify'; // (MỚI) Import toast để thông báo
 // --- BƯỚC 1: IMPORT ĐẦY ĐỦ CÁC HÀM API ---
 import {
     getCart,
@@ -8,7 +10,7 @@ import {
     clearCart as clearCartApi
 } from '../api/cartService';
 import { useAuth } from './AuthContext';
-
+const SOCKET_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 // --- Trạng thái ban đầu (không đổi) ---
 const initialState = {
     items: [],
@@ -33,6 +35,53 @@ const cartReducer = (state, action) => {
             };
         case 'SET_CART_ERROR':
             return { ...state, isLoading: false, error: action.payload };
+
+        // (MỚI) Action để cập nhật một item cụ thể trong giỏ hàng
+        case 'UPDATE_SINGLE_ITEM': {
+            // Dữ liệu từ socket event `product_updated` là một object Product hoàn chỉnh
+            const updatedProduct = action.payload;
+
+            // BƯỚC 1: Tìm item trong giỏ hàng (có cấu trúc phẳng)
+            // So sánh `item.productId` với `updatedProduct.id`
+            const itemIndex = state.items.findIndex(
+                (item) => String(item.productId) === String(updatedProduct.id)
+            );
+            // Dùng String() để đảm bảo so sánh chuỗi với chuỗi, tránh lỗi kiểu dữ liệu
+
+            // Nếu không tìm thấy, không làm gì cả
+            if (itemIndex === -1) {
+                return state;
+            }
+
+            // BƯỚC 2: Cập nhật item theo cấu trúc phẳng
+            const newItems = [...state.items];
+            const oldItem = newItems[itemIndex];
+
+            // Tạo item mới bằng cách sao chép item cũ và ghi đè
+            // các trường snapshot bằng dữ liệu từ `updatedProduct`
+            newItems[itemIndex] = {
+                ...oldItem, // Giữ lại quantity, productId, itemTotalPrice...
+                name: updatedProduct.name, // Cập nhật tên
+                price: updatedProduct.price, // Cập nhật giá
+                imageUrl: updatedProduct.imageUrl, // Cập nhật ảnh (nếu cần)
+                // CẬP NHẬT LẠI itemTotalPrice CHO ĐÚNG
+                itemTotalPrice: updatedProduct.price * oldItem.quantity,
+            };
+
+            // BƯỚC 3: Tính toán lại tổng tiền và tổng số item
+            const newTotalPrice = newItems.reduce((total, item) => total + item.itemTotalPrice, 0);
+            // Tổng số item không đổi vì chỉ cập nhật thông tin sản phẩm
+            // const newTotalItems = newItems.reduce((total, item) => total + item.quantity, 0);
+
+            return {
+                ...state,
+                items: newItems,
+                totalPrice: newTotalPrice,
+                // totalItems của state không thay đổi, có thể giữ nguyên
+                totalItems: state.totalItems,
+            };
+        }
+
         case 'CLEAR_CART':
             return { ...initialState, isLoading: false };
         default:
@@ -45,7 +94,7 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
     const [state, dispatch] = useReducer(cartReducer, initialState);
     const { isLoggedIn } = useAuth(); // Đổi tên thành isLoggedIn cho rõ ràng
-
+    const socketRef = useRef(null);
     // --- Bọc fetchCart trong useCallback ---
     const fetchCart = useCallback(async () => {
         if (!isLoggedIn) {
@@ -119,8 +168,58 @@ export function CartProvider({ children }) {
         }
     }, []);
 
+    useEffect(() => {
+        // Nếu người dùng đã đăng nhập và chưa có kết nối socket
+        if (isLoggedIn && !socketRef.current) {
+            // 1. Tạo và lưu socket vào ref
+            socketRef.current = io(SOCKET_SERVER_URL);
+            const socket = socketRef.current;
+
+            console.log("Thiết lập kết nối và trình lắng nghe Socket.IO...");
+
+            // 2. Thiết lập các trình lắng nghe sự kiện CHỈ MỘT LẦN
+            socket.on('connect', () => {
+                console.log('CartContext đã kết nối tới Socket.IO!');
+            });
+
+            socket.on('product_updated', (updatedProductFromServer) => {
+                console.log('CartContext nhận được product_updated:', updatedProductFromServer);
+
+                // Hiển thị thông báo toast
+                toast.info(`Sản phẩm "${updatedProductFromServer.name}" đã được cập nhật!`);
+
+                // Gửi action đến reducer
+                dispatch({
+                    type: 'UPDATE_SINGLE_ITEM',
+                    payload: updatedProductFromServer
+                });
+            });
+
+            socket.on('disconnect', () => {
+                console.log('CartContext đã ngắt kết nối Socket.IO.');
+            });
+        }
+
+        // Nếu người dùng đăng xuất và có kết nối socket
+        if (!isLoggedIn && socketRef.current) {
+            console.log("Đăng xuất, ngắt kết nối Socket.IO...");
+            socketRef.current.disconnect();
+            socketRef.current = null; // Reset ref
+        }
+
+        // --- Dọn dẹp cuối cùng khi CartProvider bị unmount hoàn toàn ---
+        return () => {
+            if (socketRef.current) {
+                console.log("CartProvider unmount, ngắt kết nối Socket.IO.");
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+        };
+    }, [isLoggedIn]);
+
     const value = {
         // Đổi tên để khớp với component
+        cartState: state,
         cartItems: state.items,
         totalItems: state.totalItems,
         totalPrice: state.totalPrice,
@@ -130,6 +229,7 @@ export function CartProvider({ children }) {
         updateQuantity,
         removeFromCart,
         clearCart,
+        fetchCart,
     };
 
     return (

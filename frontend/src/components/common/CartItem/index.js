@@ -24,7 +24,7 @@ function CartItem({ item, onQuantityChange, onRemove }) {
     const handleRemove = () => {
         onRemove(item.productId);
     };
-
+    console.log(item);
     return (
         // Component này giờ có thể dùng cho cả trang giỏ hàng và dropdown
         // Chúng ta có thể thêm prop `variant` để thay đổi style nếu cần
