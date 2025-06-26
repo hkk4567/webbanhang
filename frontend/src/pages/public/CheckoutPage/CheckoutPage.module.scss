@@ -241,7 +241,7 @@ $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
 
 // --- CỘT PHẢI ---
 .product-list {
-    max-height: calc(100vh - 450px); // Chiều cao tự động để vừa với cột
+    max-height: calc(100vh - 550px); // Chiều cao tự động để vừa với cột
     overflow-y: auto;
     padding-right: 1rem; // Thêm khoảng trống cho thanh cuộn
     margin: 1.5rem 0;

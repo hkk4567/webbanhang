@@ -129,6 +129,8 @@ $status-pending: (
     padding: 0 25px;
     border-top: 1px solid $border-color;
     border-bottom: 1px solid $border-color;
+    overflow-y: auto;
+    max-height: 300px; // Giới hạn chiều cao để có thể cuộn
 }
 
 // --- END: Thêm wrapper ---
