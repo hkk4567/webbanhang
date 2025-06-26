@@ -100,10 +100,10 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
         'name-desc': [['name', 'DESC']],
         'created_at': [['created_at', 'ASC']],
         '-created_at': [['created_at', 'DESC']],
-        'status-asc': ['status', 'ASC'],
-        'status-desc': ['status', 'DESC'],
-        'quantity-asc': ['quantity', 'ASC'],
-        'quantity-desc': ['quantity', 'DESC'],
+        'status-asc': [['status', 'ASC']],
+        'status-desc': [['status', 'DESC']],
+        'quantity-asc': [['quantity', 'ASC']],
+        'quantity-desc': [['quantity', 'DESC']],
     };
     // Sửa đổi nhỏ: Sequelize v6+ yêu cầu order là một mảng của các mảng
     options.order = sortMapping[sortBy] || sortMapping['-created_at'];
