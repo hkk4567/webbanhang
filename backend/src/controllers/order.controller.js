@@ -185,6 +185,7 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
 
 // Các hàm khác như getMyOrders, getAllOrders...
 exports.getAllOrders = catchAsync(async (req, res, next) => {
+    console.log("--- BẮT ĐẦU REQUEST getAllOrders ---");
     // 1. Phân trang
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
@@ -201,10 +202,17 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
         // Nếu không, mới dùng status từ bộ lọc thông thường
         whereCondition.status = status;
     }
-    if (startDate && endDate) {
-        whereCondition.createdAt = {
-            [Op.between]: [new Date(startDate), new Date(new Date(endDate).setHours(23, 59, 59, 999))]
-        };
+    if (startDate || endDate) {
+        // DÙNG TÊN CỘT TRONG DB LÀ 'created_at'
+        whereCondition.created_at = {};
+
+        if (startDate && typeof startDate === 'string' && startDate.length > 0) {
+            whereCondition.created_at[Op.gte] = new Date(`${startDate}T00:00:00.000Z`);
+        }
+
+        if (endDate && typeof endDate === 'string' && endDate.length > 0) {
+            whereCondition.created_at[Op.lte] = new Date(`${endDate}T23:59:59.999Z`);
+        }
     }
     if (search) {
         // Kiểm tra xem chuỗi tìm kiếm có phải là một số nguyên dương không
@@ -248,7 +256,8 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
     const sortBy = req.query.sort || '-created_at';
     const orderDirection = sortBy.startsWith('-') ? 'DESC' : 'ASC';
     const orderField = sortBy.startsWith('-') ? sortBy.substring(1) : sortBy;
-
+    const allowedSortFields = ['id', 'status', 'totalPrice', 'created_at', 'updated_at'];
+    const finalOrderField = allowedSortFields.includes(orderField) ? orderField : 'created_at';
     // 4. Query
     const { count, rows } = await Order.findAndCountAll({
         where: whereCondition,
@@ -257,7 +266,7 @@ exports.getAllOrders = catchAsync(async (req, res, next) => {
         include: includeConditions,
         limit,
         offset,
-        order: [[orderField, orderDirection]],
+        order: [[finalOrderField, orderDirection]],
         distinct: true,
     });
 
