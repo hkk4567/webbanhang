@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  # Dịch vụ Meilisearch
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch
+    ports:
+      # Ánh xạ cổng 7700 của container ra cổng 7700 của máy bạn
+      - "7700:7700"
+    volumes:
+      # Lưu trữ dữ liệu của Meilisearch vào thư mục ./meili_data trên máy bạn
+      - ./meili_data:/meili_data
+    environment:
+      # BẮT BUỘC: Đặt Master Key để bảo mật. Thay thế bằng key của riêng bạn!
+      - MEILI_MASTER_KEY=CLwNNTw_zeA-XdXRmbvB5Oozy3iZc7RaQK9KpGMLB84
+      # Môi trường development sẽ tắt yêu cầu master key cho một số endpoint (tiện cho phát triển)
+      - MEILI_ENV=development
+    restart: unless-stopped # Tự khởi động lại nếu bị dừng ngoài ý muốn
+
+  # Dịch vụ Redis
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      # Ánh xạ cổng 6379 của container ra cổng 6379 của máy bạn
+      # Tiện cho việc kết nối từ các công cụ quản lý Redis trên máy tính
+      - "6379:6379"
+    volumes:
+      # Lưu trữ dữ liệu của Redis vào thư mục ./redis_data trên máy bạn
+      - ./redis_data:/data
+    restart: unless-stopped
