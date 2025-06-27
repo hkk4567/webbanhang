@@ -9,8 +9,7 @@ import Pagination from '../../../components/common/Pagination';
 import ProductCard from '../../../components/common/ProductCard';
 import ProductQuickViewModal from '../../../components/common/ProductQuickViewModal';
 import { usePagination } from '../../../hooks/usePaginationAPI';
-import { getProducts } from '../../../api/productService';
-import { getCategories } from '../../../api/productService'; // Import thêm getCategories
+import { searchProducts } from '../../../api/searchService';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight } from '@fortawesome/free-solid-svg-icons';
@@ -25,14 +24,14 @@ function SearchResultsPage() {
 
     // --- STATE CHO DỮ LIỆU TỪ API ---
     const [searchResults, setSearchResults] = useState([]);
-    const [categories, setCategories] = useState([]);
+    const [categoryNameForTitle, setCategoryNameForTitle] = useState('');
     const [paginationData, setPaginationData] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // --- LẤY PARAMS TỪ URL ---
     const [searchParams] = useSearchParams();
-    const query = searchParams.get('q') || '';
+    const query = searchParams.get('search') || ''; // Sửa 'q' thành 'search'
     const categoryId = searchParams.get('categoryId') || '';
     const priceMin = searchParams.get('price_min') || '';
     const priceMax = searchParams.get('price_max') || '';
@@ -59,22 +58,45 @@ function SearchResultsPage() {
             setIsLoading(true);
             setError(null);
             try {
-                const params = {
-                    page: requestedPage,
+                // Xây dựng bộ lọc (filter) cho Meilisearch
+                const filters = [];
+                if (categoryId) {
+                    filters.push(`categoryId = ${categoryId}`);
+                }
+                if (priceMin) {
+                    filters.push(`price >= ${priceMin}`);
+                }
+                if (priceMax) {
+                    filters.push(`price <= ${priceMax}`);
+                }
+                // Thêm điều kiện chỉ lấy sản phẩm 'active'
+                filters.push(`status = 'active'`);
+
+                const meiliOptions = {
                     limit: ITEMS_PER_PAGE,
+                    offset: (requestedPage - 1) * ITEMS_PER_PAGE,
+                    filter: filters.join(' AND '),
+                    // Có thể thêm sort ở đây nếu cần, ví dụ: sort: ['price:asc']
                 };
-                if (query) params.search = query;
-                if (categoryId) params.categoryId = categoryId;
-                if (priceMin) params.price_min = priceMin;
-                if (priceMax) params.price_max = priceMax;
+                console.log("Đang tìm kiếm với Meilisearch:", { query, options: meiliOptions });
+                // Gọi API tìm kiếm mới
+                const response = await searchProducts(query, meiliOptions);
 
-                const response = await getProducts(params);
-
-                setSearchResults(response.data.data.products);
-                setPaginationData(response.data.data.pagination);
-
+                // Cập nhật state với dữ liệu từ Meilisearch
+                setSearchResults(response.hits);
+                console.log("Kết quả tìm kiếm từ Meilisearch:", response.hits);
+                setPaginationData({
+                    totalItems: response.estimatedTotalHits,
+                    totalPages: Math.ceil(response.estimatedTotalHits / ITEMS_PER_PAGE),
+                    currentPage: requestedPage,
+                });
+                if (categoryId && response.hits.length > 0 && response.hits[0].category) {
+                    setCategoryNameForTitle(response.hits[0].category.name);
+                } else {
+                    setCategoryNameForTitle(''); // Reset nếu không lọc theo danh mục
+                }
             } catch (err) {
-                console.error("Lỗi khi tìm kiếm sản phẩm:", err);
+                console.error("Lỗi khi tìm kiếm sản phẩm với Meilisearch:", err);
                 setError("Không thể tải kết quả tìm kiếm. Vui lòng thử lại.");
             } finally {
                 setIsLoading(false);
@@ -82,37 +104,15 @@ function SearchResultsPage() {
         };
 
         fetchSearchResults();
-    }, [query, categoryId, priceMin, priceMax, requestedPage]); // Phụ thuộc vào tất cả các yếu tố có thể trigger việc gọi lại API
+    }, [query, categoryId, priceMin, priceMax, requestedPage]);
 
-    // Effect 2: Chỉ chịu trách nhiệm RESET trang về 1 khi BỘ LỌC thay đổi
     useEffect(() => {
-        // Ở lần render đầu tiên, `isInitialMount.current` là true.
-        // Chúng ta đánh dấu nó thành false và thoát ra để không reset trang.
         if (isInitialMount.current) {
             isInitialMount.current = false;
             return;
         }
-
-        // Từ những lần render sau, nếu bất kỳ bộ lọc nào thay đổi,
-        // effect này sẽ chạy và gọi goToPage(1).
-        // Hook `usePagination` sẽ xử lý việc chỉ cập nhật `requestedPage` nếu nó khác 1.
         goToPage(1);
-
-    }, [query, categoryId, priceMin, priceMax, goToPage]); // Phụ thuộc vào các BỘ LỌC và hàm goToPage
-
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const response = await getCategories('user');
-                setCategories(response.data.data.categories);
-            } catch (err) {
-                console.error("Không thể tải danh mục:", err);
-                // Không cần set lỗi chính ở đây vì nó không phải là chức năng cốt lõi
-            }
-        };
-        fetchCategories();
-    }, []);
-
+    }, [query, categoryId, priceMin, priceMax, goToPage]);
 
     // --- CÁC HÀM HANDLER ---
     const handleShowModal = (product) => {
@@ -141,16 +141,12 @@ function SearchResultsPage() {
         }
 
         // 2. Xử lý danh mục
-        if (categoryId) {
-            // Tìm tên danh mục từ mảng categories đã fetch
-            const categoryName = categories.find(cat => String(cat.id) === categoryId)?.name;
-            if (categoryName) {
-                titleParts.push(
-                    <React.Fragment key="category">
-                        trong danh mục <span className={cx('search-value')}>{categoryName}</span>
-                    </React.Fragment>
-                );
-            }
+        if (categoryNameForTitle) {
+            titleParts.push(
+                <React.Fragment key="category">
+                    trong danh mục <span className={cx('search-value')}>{categoryNameForTitle}</span>
+                </React.Fragment>
+            );
         }
 
         // 3. Xử lý khoảng giá

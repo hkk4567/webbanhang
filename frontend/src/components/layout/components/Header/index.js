@@ -45,8 +45,11 @@ function Header() {
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchTerm.trim()) {
-            navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
-            closeAllMenus(); // Đóng tất cả menu sau khi search
+            // ===> THAY ĐỔI CỐT LÕI Ở ĐÂY
+            // Đổi tên tham số từ 'q' thành 'search' để khớp với SearchResultsPage
+            navigate(`/search?search=${encodeURIComponent(searchTerm.trim())}`);
+
+            closeAllMenus();
             setSearchTerm('');
         }
     };

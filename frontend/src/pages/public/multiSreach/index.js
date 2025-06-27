@@ -53,7 +53,8 @@ function MultiSearch() {
         const params = new URLSearchParams();
 
         if (searchTerm.trim()) {
-            params.append('q', searchTerm.trim());
+            // Sử dụng tên tham số 'search' để khớp với SearchResultsPage
+            params.append('search', searchTerm.trim());
         }
         if (selectedCategory) {
             params.append('categoryId', selectedCategory);
