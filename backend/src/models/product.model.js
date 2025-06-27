@@ -28,35 +28,44 @@ Product.init({
          */
         afterSave: async (product, options) => {
             try {
-                const fullProductData = await Product.findByPk(product.id, {
-                    include: {
-                        model: Category,
-                        as: 'category',
-                        attributes: ['id', 'name']
-                    }
-                });
-
-                if (!fullProductData) return;
-                // Lấy ra index 'products' từ Meilisearch
                 const index = getProductIndex();
-                console.log(`[Meili Hook] Đang đồng bộ hóa sản phẩm ID: ${product.id} (afterSave)`);
+                console.log(`[Meili Hook] Kích hoạt afterSave cho sản phẩm ID: ${product.id}`);
 
-                // 1. Chuyển instance Sequelize thành JSON đơn giản
-                const productData = fullProductData.toJSON();
+                // Chuyển instance Sequelize thành JSON đơn giản.
+                const productJson = product.toJSON();
 
-                // 2. Chuẩn hóa dữ liệu trước khi gửi (QUAN TRỌNG)
+                // Chuẩn bị dữ liệu để gửi đi.
+                // Chúng ta sẽ lấy object `category` trực tiếp từ instance `product` nếu nó đã được `include`.
                 const dataForMeili = {
-                    ...productData,
-                    price: parseFloat(productData.price) || 0
+                    ...productJson,
+                    price: parseFloat(productJson.price) || 0,
+                    // Dòng này sẽ lấy object `category` nếu nó tồn tại trong instance `product`,
+                    // nếu không nó sẽ là undefined, và Meilisearch sẽ bỏ qua.
+                    category: product.category ? product.category.toJSON() : undefined
                 };
 
-                // 3. Gửi dữ liệu đã được chuẩn hóa
-                // primaryKey không cần thiết ở đây vì index đã được tạo với khóa chính rồi
-                await index.addDocuments([dataForMeili]);
+                // Nếu `category` chưa có (ví dụ: chỉ cập nhật tên sản phẩm), 
+                // và chúng ta có `categoryId`, hãy thử lấy lại nó.
+                if (!dataForMeili.category && product.categoryId) {
+                    console.log(`[Meili Hook] Category chưa được nạp, đang tìm category ID: ${product.categoryId}...`);
+                    // Sử dụng một cách an toàn để truy cập model Category
+                    const CategoryModel = sequelize.models.Category;
+                    const categoryData = await CategoryModel.findByPk(product.categoryId, {
+                        attributes: ['id', 'name'],
+                        transaction: options.transaction
+                    });
+                    if (categoryData) {
+                        dataForMeili.category = categoryData.toJSON();
+                    }
+                }
+
+                console.log(`[Meili Hook] Đang gửi dữ liệu ID: ${product.id} lên Meilisearch.`);
+                await index.addDocuments([dataForMeili], { primaryKey: 'id' });
+
                 console.log(`[Meili Hook] Đồng bộ hóa thành công sản phẩm ID: ${product.id}`);
+
             } catch (error) {
-                // Log lỗi ra để debug mà không làm sập ứng dụng
-                console.error(`[Meili Hook] Lỗi khi đồng bộ hóa sản phẩm ID ${product.id} (afterSave):`, error);
+                console.error(`[Meili Hook] Lỗi khi đồng bộ hóa sản phẩm ID ${product.id} (afterSave):`, error.message);
             }
         },
 
