@@ -9,7 +9,8 @@ import ProductCard from '../../../components/common/ProductCard';
 import ProductQuickViewModal from '../../../components/common/ProductQuickViewModal';
 import Pagination from '../../../components/common/Pagination';
 import { usePagination } from '../../../hooks/usePaginationAPI'; // Hook đã nâng cấp cho server
-import { getProducts, getCategories } from '../../../api/productService'; // API services
+import { getCategories } from '../../../api/productService'; // API services
+import { searchProducts } from '../../../api/searchService';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight, faTableCells, faList } from '@fortawesome/free-solid-svg-icons';
@@ -63,34 +64,71 @@ function Product() {
             setError(null);
 
             try {
-                // Lấy danh mục chỉ một lần khi component mount
+                // Lấy danh mục (chỉ chạy một lần)
                 if (categories.length === 0) {
-                    const catResponse = await getCategories();
-                    setCategories([{ id: '', name: 'Tất cả' }, ...catResponse.data.data.categories]);
+                    const catResponse = await getCategories('user');
+                    setCategories([{ id: '', name: 'Tất cả sản phẩm' }, ...catResponse.data.data.categories]);
                 }
 
-                // --- BẮT ĐẦU SỬA LỖI LOGIC GỬI PARAMS ---
-                // 1. Xây dựng đối tượng params cơ bản
-                const params = {
-                    page: requestedPage,
-                    limit: ITEMS_PER_PAGE,
-                    sort: sortOrder,
+                // --- LOGIC MEILISEARCH ---
+
+                // 1. Xây dựng bộ lọc (filter)
+                const filters = [];
+                if (categoryId) {
+                    filters.push(`categoryId = ${categoryId}`);
+                }
+
+                if (selectedPriceRanges.length > 0) {
+                    const priceConditions = selectedPriceRanges.map(key => {
+                        const range = priceRanges[key];
+                        if (!range) return null;
+
+                        const conditions = [];
+                        if (range.min !== undefined) conditions.push(`price >= ${range.min}`);
+                        if (range.max !== Infinity) conditions.push(`price < ${range.max}`);
+
+                        return `(${conditions.join(' AND ')})`;
+                    }).filter(Boolean);
+
+                    if (priceConditions.length > 0) {
+                        filters.push(`(${priceConditions.join(' OR ')})`);
+                    }
+                }
+
+                filters.push(`status = 'active'`);
+
+                // 2. Hàm định dạng sắp xếp (sort)
+                const formatSortForMeili = (sortKey) => {
+                    // Xử lý các trường hợp có dấu gạch ngang (ví dụ: 'price-asc', 'name-desc')
+                    if (sortKey.includes('-')) {
+                        // Trường hợp đặc biệt cho created_at
+                        if (sortKey === '-created_at') {
+                            return 'createdAt:desc';
+                        }
+                        // Các trường hợp còn lại
+                        return sortKey.replace('-', ':');
+                    }
+                    // Mặc định, nếu không có gì, trả về sắp xếp theo tên
+                    return 'name:asc';
                 };
 
-                // 2. Chỉ thêm categoryId nếu nó tồn tại
-                if (categoryId) {
-                    params.categoryId = categoryId;
-                }
+                // 3. Tạo options cho Meilisearch
+                const meiliOptions = {
+                    limit: ITEMS_PER_PAGE,
+                    offset: (requestedPage - 1) * ITEMS_PER_PAGE,
+                    filter: filters.join(' AND '),
+                    sort: [formatSortForMeili(sortOrder)]
+                };
 
-                // 3. Xử lý và thêm các tham số giá một cách tường minh
-                if (selectedPriceRanges.length > 0) {
-                    params.price_ranges = selectedPriceRanges; // Gửi dưới tên 'price_ranges'
-                }
-                // --- KẾT THÚC SỬA LỖI ---
+                // 4. Gọi API tìm kiếm Meilisearch
+                const prodResponse = await searchProducts('', meiliOptions);
 
-                const prodResponse = await getProducts(params);
-                setProducts(prodResponse.data.data.products);
-                setPaginationData(prodResponse.data.data.pagination);
+                setProducts(prodResponse.hits);
+                setPaginationData({
+                    totalItems: prodResponse.estimatedTotalHits,
+                    totalPages: Math.ceil(prodResponse.estimatedTotalHits / ITEMS_PER_PAGE),
+                    currentPage: requestedPage,
+                });
 
             } catch (err) {
                 setError('Không thể tải sản phẩm. Vui lòng thử lại sau.');
@@ -101,7 +139,6 @@ function Product() {
         };
 
         fetchApiData();
-        // Dependency array này đảm bảo useEffect chạy lại khi các bộ lọc thay đổi
     }, [requestedPage, categoryId, selectedPriceRanges, sortOrder, categories.length]);
 
     // Effect RIÊNG để reset trang về 1 khi bộ lọc thay đổi
