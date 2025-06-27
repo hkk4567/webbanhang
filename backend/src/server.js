@@ -1,5 +1,4 @@
 // src/server.js
-
 // 1. Nạp các biến môi trường
 require('dotenv').config();
 
@@ -20,6 +19,7 @@ const mainRoutes = require('./routes');
 // Import Middleware xử lý lỗi
 const errorHandler = require('./middlewares/errorHandler');
 const AppError = require('./utils/appError');
+const { configureProductIndex } = require('./services/meiliSearchService');
 // 3. Khởi tạo ứng dụng Express
 const app = express();
 const server = http.createServer(app); // Tạo một server HTTP từ app Express
@@ -60,6 +60,7 @@ app.use(cookieParser());
     try {
         await sequelize.authenticate();
         console.log('✅ Kết nối database thành công.');
+        await configureProductIndex();
     } catch (error) {
         console.error('❌ Không thể kết nối đến database:', error);
         process.exit(1); // Thoát ứng dụng nếu không thể kết nối DB

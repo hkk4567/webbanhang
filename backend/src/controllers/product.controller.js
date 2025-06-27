@@ -22,6 +22,8 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
         categoryId,
         status,
         price_ranges,
+        price_min,
+        price_max,
         sort,
     } = req.query;
 
@@ -35,7 +37,6 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
         }],
         distinct: true,
     };
-
     // --- LOGIC PHÂN QUYỀN VÀ PHÂN TRANG MẶC ĐỊNH ---
     // Giả định req.user tồn tại nếu đã đăng nhập
     const isAdminOrStaff = req.user && ['admin', 'staff'].includes(req.user.role);
@@ -60,6 +61,25 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
     }
     if (categoryId) {
         whereCondition.categoryId = req.query.categoryId;
+    }
+
+    // --- NEW: Xử lý price_min và price_max ---
+    const minPrice = price_min ? parseInt(price_min, 10) : NaN;
+    const maxPrice = price_max ? parseInt(price_max, 10) : NaN;
+
+    const hasValidMin = !isNaN(minPrice) && minPrice >= 0;
+    const hasValidMax = !isNaN(maxPrice) && maxPrice >= 0;
+
+    // Chỉ xây dựng điều kiện giá nếu có ít nhất một giá trị hợp lệ
+    if (hasValidMin || hasValidMax) {
+        const priceCondition = {};
+        if (hasValidMin) {
+            priceCondition[Op.gte] = minPrice;
+        }
+        if (hasValidMax) {
+            priceCondition[Op.lte] = maxPrice;
+        }
+        whereCondition.price = priceCondition;
     }
 
     // --- LOGIC XỬ LÝ GIÁ (ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT) ---
@@ -109,8 +129,6 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
     options.order = sortMapping[sortBy] || sortMapping['-created_at'];
 
     // 4. THỰC HIỆN QUERY
-    console.log('--- Final `where` condition for Sequelize ---:', JSON.stringify(whereCondition, null, 2)); // Dòng debug quan trọng
-    console.log('--- EXECUTING WITH CONTROLLER VERSION 2.0 ---'); // Thêm dòng này
     console.log('--- FINAL WHERE CLAUSE OBJECT ---:', JSON.stringify(whereCondition, null, 2));
     const { count, rows } = await Product.findAndCountAll({
         where: whereCondition,
