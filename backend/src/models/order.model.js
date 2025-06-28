@@ -71,14 +71,22 @@ Order.init({
         allowNull: false,
         field: 'is_read', // Tên cột trong CSDL
     },
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        field: 'created_at' // Đảm bảo ánh xạ đúng
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        field: 'updated_at' // Đảm bảo ánh xạ đúng
+    }
 }, {
     sequelize,
     modelName: 'Order',
     tableName: 'orders',
     timestamps: true,
     underscored: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
 });
 
 module.exports = Order;

@@ -30,3 +30,23 @@ services:
       # Lưu trữ dữ liệu của Redis vào thư mục ./redis_data trên máy bạn
       - ./redis_data:/data
     restart: unless-stopped
+
+    # === Dịch vụ RabbitMQ (MỚI THÊM) ===
+  rabbitmq:
+    # Sử dụng image có sẵn giao diện quản lý web, rất tiện lợi
+    image: rabbitmq:3.13-management 
+    container_name: rabbitmq
+    ports:
+      # Cổng 5672: Dành cho ứng dụng của bạn (Publisher/Consumer) kết nối tới
+      - "5672:5672"
+      # Cổng 15672: Dành cho giao diện quản lý trên trình duyệt web
+      - "15672:15672"
+    volumes:
+      # Lưu trữ dữ liệu của RabbitMQ (queues, messages, users...) để không bị mất khi container khởi động lại
+      - ./rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      # Thiết lập user và password mặc định cho RabbitMQ
+      # HÃY THAY THẾ BẰNG USER/PASSWORD CỦA BẠN ĐỂ BẢO MẬT HƠN
+      - RABBITMQ_DEFAULT_USER=myuser
+      - RABBITMQ_DEFAULT_PASS=mypassword
+    restart: unless-stopped

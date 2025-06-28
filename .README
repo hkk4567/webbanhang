@@ -3,3 +3,11 @@ docker-compose up -d
 docker-compose down
 
 node scripts/syncToMeili.js
+
+node src/workers/order_worker.js
+
+pm2 start ecosystem.config.js cho backend và dịch vụ gửi email
+
+pm2 restart all để restart tất cả các dịch vụ
+
+pm2 stop all để dừng tất cả các dịch vụ

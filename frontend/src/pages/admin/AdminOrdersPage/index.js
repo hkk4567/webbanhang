@@ -329,7 +329,7 @@ function AdminOrdersPage() {
                                                     <div>{order.shippingName}</div>
                                                     <small className="text-muted">{order.shippingPhone}</small>
                                                 </td>
-                                                <td>{formatDate(order.created_at)}</td>
+                                                <td>{formatDate(order.createdAt)}</td>
                                                 <td>{`${order.shippingStreet}, ${order.shippingWard}, ${order.shippingDistrict}, ${order.shippingProvince}`}</td>
                                                 <td>{formatCurrency(order.totalPrice)}</td>
                                                 <td>{renderStatusBadge(order.status)}</td>
@@ -375,7 +375,7 @@ function AdminOrdersPage() {
                             </Col>
                             <Col md={6} className="mb-3">
                                 <h6>Thông tin đơn hàng</h6>
-                                <p className="mb-1"><strong>Ngày đặt:</strong> {formatDate(selectedOrder.created_at)}</p>
+                                <p className="mb-1"><strong>Ngày đặt:</strong> {formatDate(selectedOrder.createdAt)}</p>
                                 <p className="mb-1"><strong>Thanh toán:</strong> {selectedOrder.paymentMethod}</p>
                                 <p className="mb-0"><strong>Ghi chú:</strong> {selectedOrder.note || 'Không có'}</p>
                             </Col>

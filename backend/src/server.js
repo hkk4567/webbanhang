@@ -11,6 +11,7 @@ const cors = require('cors');
 const morgan = require('morgan'); // Thêm morgan để log request
 const helmet = require('helmet'); // Thêm helmet để tăng cường bảo mật
 const sequelize = require('./config/database');
+const { connectRabbitMQ } = require('./config/rabbitmq');
 require('./config/redis');    // Kết nối Redis
 // Import các Routes
 const mainRoutes = require('./routes');
@@ -56,16 +57,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 // 5. Kết nối Database
-(async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('✅ Kết nối database thành công.');
-        await configureProductIndex();
-    } catch (error) {
-        console.error('❌ Không thể kết nối đến database:', error);
-        process.exit(1); // Thoát ứng dụng nếu không thể kết nối DB
-    }
-})();
+// (async () => {
+//     try {
+//         await sequelize.authenticate();
+//         console.log('✅ Kết nối database thành công.');
+//         await configureProductIndex();
+//     } catch (error) {
+//         console.error('❌ Không thể kết nối đến database:', error);
+//         process.exit(1); // Thoát ứng dụng nếu không thể kết nối DB
+//     }
+// })();
 
 // 6. Định nghĩa các API Routes
 app.get('/api/healthcheck', (req, res) => {
@@ -105,9 +106,32 @@ app.use(errorHandler);
 
 // 8. Khởi động Server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`🚀 Server đang chạy trên port ${PORT} ở môi trường ${process.env.NODE_ENV}`);
-});
+const startServer = async () => {
+    try {
+        // Bước 1: Kết nối Database và MeiliSearch
+        await sequelize.authenticate();
+        console.log('✅ Database connection has been established successfully.');
+        await configureProductIndex();
+        console.log('✅ MeiliSearch product index configured.');
+
+        // Bước 2: Kết nối RabbitMQ
+        await connectRabbitMQ();
+        // Console log cho RabbitMQ đã có trong hàm connectRabbitMQ
+
+        // Bước 3: Sau khi mọi thứ sẵn sàng, mới khởi động server
+        // CHỈ DÙNG `server.listen` (vì bạn có Socket.IO)
+        server.listen(PORT, () => {
+            console.log(`🚀 Server is running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+        });
+
+    } catch (error) {
+        console.error('❌ Unable to start the server:', error);
+        process.exit(1);
+    }
+};
+
+// Gọi hàm để bắt đầu toàn bộ quá trình
+startServer();
 
 // (Nâng cao) Xử lý các lỗi chưa được bắt và tắt server an toàn
 process.on('unhandledRejection', (err) => {

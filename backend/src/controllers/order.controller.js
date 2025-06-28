@@ -4,6 +4,7 @@ const sequelize = require('../config/database');
 const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+const { getChannel } = require('../config/rabbitmq');
 
 exports.createOrder = catchAsync(async (req, res, next) => {
     const userId = req.user.id;
@@ -38,7 +39,7 @@ exports.createOrder = catchAsync(async (req, res, next) => {
             throw new AppError('Một số sản phẩm trong giỏ hàng không còn tồn tại.', 400);
         }
 
-        let totalPrice = 0;
+        let totalPrice = 30000;
         const orderItemsData = [];
 
         // 3. Kiểm tra tồn kho và tính tổng tiền
@@ -117,6 +118,29 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 
         return newOrder;
     });
+
+    // --- GỬI TIN NHẮN SAU KHI TRANSACTION THÀNH CÔNG ---
+    try {
+        const channel = getChannel();
+        const queue = 'order_processing';
+        const msg = {
+            orderId: result.id,
+            userId: result.userId,
+            event: 'order_created'
+        };
+
+        // Gửi tin nhắn vào queue
+        // Buffer.from để chuyển object thành dạng mà RabbitMQ có thể xử lý
+        // persistent: true -> tin nhắn sẽ được lưu vào đĩa, không mất khi RabbitMQ sập
+        channel.sendToQueue(queue, Buffer.from(JSON.stringify(msg)), { persistent: true });
+
+        console.log(`[x] Sent message to ${queue}:`, msg);
+
+    } catch (error) {
+        // Rất quan trọng: Ghi log lỗi nếu không gửi được tin nhắn để xử lý thủ công
+        // Dù lỗi ở đây, đơn hàng vẫn đã được tạo thành công
+        console.error('Failed to send order message to RabbitMQ:', error);
+    }
 
     // 8. Nếu transaction thành công, xóa giỏ hàng khỏi Redis
     await redisClient.del(cartKey);

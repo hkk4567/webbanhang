@@ -149,7 +149,7 @@ function PurchaseHistoryPage() {
 
                                         <div className={cx('order-footer')}>
                                             <div className={cx('product-history-date')}>
-                                                Ngày đặt: {new Date(order.created_at).toLocaleDateString('vi-VN')}
+                                                Ngày đặt: {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                                             </div>
                                             <div className={cx('product-history-total-price')}>
                                                 Thành tiền: <strong>{formatCurrency(order.totalPrice)}</strong>
