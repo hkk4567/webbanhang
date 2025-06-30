@@ -105,7 +105,7 @@ function AdminDashboard() {
                             <ListGroup.Item key={order.id} className="d-flex justify-content-between align-items-center">
                                 <div>
                                     <Link to={`/admin/orders?search=${order.id}`}>Đơn hàng #{order.id}</Link>
-                                    <small className="d-block text-muted">Ngày: {new Date(order.created_at).toLocaleDateString('vi-VN')}</small>
+                                    <small className="d-block text-muted">Ngày: {new Date(order.createdAt).toLocaleDateString('vi-VN')}</small>
                                 </div>
                                 <Badge bg="success">{formatCurrency(order.totalPrice)}</Badge>
                             </ListGroup.Item>
