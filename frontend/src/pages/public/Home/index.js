@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
-
+import ProductCard from '../../../components/common/ProductCard'; // Import component ProductCard
+import ProductQuickViewModal from '../../../components/common/ProductQuickViewModal';
+import { getRecommendationsForUser } from '../../../services/recommendationService'; // Import hàm gọi API
+import { getAllPublicCategories } from '../../../api/categoryService';
+import { useAuth } from '../../../context/AuthContext'; // Import AuthContext để lấy thông tin user
 // --- 1. IMPORT HÌNH ẢNH ---
 // (Hãy chắc chắn đường dẫn này đúng)
 import slider1 from '../../../assets/img/slider_1.webp';
@@ -49,6 +53,70 @@ function Home() {
     // --- 3. STATE VÀ EFFECT CHO CÁC SLIDER ---
     const [currentSlider, setCurrentSlider] = useState(0);
     const [currentProcess, setCurrentProcess] = useState(0);
+    const { user } = useAuth(); // Lấy thông tin user từ context
+    const [recommendedProducts, setRecommendedProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loadingRecs, setLoadingRecs] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    useEffect(() => {
+        // Hàm này sẽ chạy một lần duy nhất khi component được tải
+        const fetchCategories = async () => {
+            try {
+                // Gọi đúng hàm từ service của bạn
+                const cats = await getAllPublicCategories();
+                setCategories(cats.data.data.categories); // Lưu danh sách vào state
+            } catch (error) {
+                console.error("Lỗi không thể tải danh sách danh mục:", error);
+                setCategories([]); // Đặt lại thành mảng rỗng nếu có lỗi
+            }
+        };
+        fetchCategories();
+    }, []);
+    useEffect(() => {
+        console.log("User info in Home component:", user); // Kiểm tra thông tin user
+
+        // Hàm để tải dữ liệu gợi ý
+        const fetchRecommendations = async () => {
+            if (user && user.id) { // Chỉ gọi API nếu người dùng đã đăng nhập và có ID
+                setLoadingRecs(true);
+                try {
+                    // Gọi API để lấy gợi ý cho người dùng hiện tại
+                    // Bạn có thể tùy chỉnh numRecs và alpha ở đây
+                    const recs = await getRecommendationsForUser({
+                        userId: user.id,
+                        numRecs: 4, // Lấy 4 sản phẩm để hiển thị đẹp trên 1 hàng
+                        alpha: 0.5
+                    });
+                    setRecommendedProducts(recs);
+                } catch (error) {
+                    console.error("Failed to fetch recommendations:", error);
+                    setRecommendedProducts([]); // Đặt lại thành mảng rỗng nếu có lỗi
+                } finally {
+                    setLoadingRecs(false);
+                }
+            } else {
+                // Nếu người dùng chưa đăng nhập, có thể gọi API gợi ý sản phẩm bán chạy nhất
+                // (API của bạn đã xử lý trường hợp user_id không tồn tại)
+                // Hoặc đơn giản là không hiển thị gì cả.
+                // Ở đây, ta sẽ thử gọi API với một user_id không tồn tại để lấy sản phẩm bán chạy.
+                const fetchTopSelling = async () => {
+                    setLoadingRecs(true);
+                    try {
+                        const topSelling = await getRecommendationsForUser({ userId: 999999, numRecs: 4 });
+                        setRecommendedProducts(topSelling);
+                    } catch (error) {
+                        console.error("Failed to fetch top selling products:", error);
+                    } finally {
+                        setLoadingRecs(false);
+                    }
+                }
+                fetchTopSelling();
+            }
+        };
+
+        fetchRecommendations();
+    }, [user]); // Chạy lại effect này khi thông tin user thay đổi (đăng nhập/đăng xuất)
 
     useEffect(() => {
         const sliderInterval = setInterval(() => {
@@ -63,6 +131,15 @@ function Home() {
         }, 4000);
         return () => clearInterval(processInterval);
     }, []);
+    const handleViewProduct = (product) => {
+        setSelectedProduct(product); // Đặt sản phẩm được chọn
+        setShowModal(true);          // Mở modal
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);         // Đóng modal
+        setSelectedProduct(null);    // Reset sản phẩm được chọn
+    };
 
     return (
         <main>
@@ -168,12 +245,56 @@ function Home() {
                     <div className="row mb-5" style={{ marginBottom: '20px' }}>
                         <div className="col-12 text-center" style={{ textAlign: 'center' }}>
                             <h2 className={cx('product-advertising-title')}>
-                                <Link to="/story">Coffee là hương vị của bạn</Link>
+                                <Link to="/">{user ? `Gợi ý dành cho ${user.fullName}` : "Sản phẩm nổi bật"}</Link>
                             </h2>
-                            <p>Có gì bất ngờ tại đây</p>
+                            <p>Những sản phẩm có thể bạn sẽ thích</p>
                         </div>
                     </div>
-                    {/* Phần product-item-box nếu có sẽ được thêm vào đây */}
+
+                    {/* --- MỚI: RENDER DANH SÁCH SẢN PHẨM GỢI Ý --- */}
+                    <div className={cx('product-item-box')}>
+                        {loadingRecs ? (
+                            <p style={{ textAlign: 'center', width: '100%' }}>Đang tải gợi ý...</p>
+                        ) : recommendedProducts.length > 0 ? (
+                            <div className="row g-4">
+                                {recommendedProducts.map(product => {
+                                    // Tìm thông tin danh mục từ state `categories`
+                                    const categoryInfo = categories.find(cat => cat.id === product.category_id) || null;
+
+                                    return (
+                                        <div key={product.product_id} className="col-6 col-md-4 col-lg-3">
+                                            <ProductCard
+                                                product={{
+                                                    // Ánh xạ dữ liệu từ API gợi ý sang cấu trúc mà ProductCard cần
+                                                    id: product.product_id,
+                                                    name: product.name,
+                                                    price: product.price,
+                                                    imageUrl: product.image_url,
+                                                    description: product.description,
+                                                    quantity: product.quantity,
+                                                    status: product.status,
+                                                    // Truyền object category đầy đủ đã tìm được
+                                                    category: categoryInfo
+                                                }}
+                                                onViewProduct={() => handleViewProduct({
+                                                    id: product.product_id,
+                                                    name: product.name,
+                                                    price: product.price,
+                                                    imageUrl: product.image_url,
+                                                    description: product.description,
+                                                    quantity: product.quantity,
+                                                    status: product.status,
+                                                    category: categoryInfo,
+                                                })}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p style={{ textAlign: 'center', width: '100%' }}>Không có sản phẩm gợi ý nào để hiển thị.</p>
+                        )}
+                    </div>
                     <div className="row align-items-center g-5">
                         <div className="col-md-6">
                             <div className={cx('product-advertising-banner')}>
@@ -202,6 +323,13 @@ function Home() {
                     </div>
                 </div>
             </section>
+            {selectedProduct && (
+                <ProductQuickViewModal
+                    show={showModal}
+                    handleClose={handleCloseModal}
+                    product={selectedProduct}
+                />
+            )}
         </main>
     );
 }
